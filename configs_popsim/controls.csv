@@ -1,0 +1,38 @@
+target,geography,seed_table,importance,control_field,expression
+num_hh,county_id,households,1000000000,num_hh,(households.WGTP > 0) & (households.WGTP < np.inf)
+ages_0_4,county_id,persons,5000,ages_0_4,persons.AGEP <= 4
+ages_10_15,county_id,persons,5000,ages_10_15,(persons.AGEP >= 10) & (persons.AGEP <= 14)
+ages_15_20,county_id,persons,5000,ages_15_20,(persons.AGEP >= 15) & (persons.AGEP <= 19)
+ages_20_25,county_id,persons,5000,ages_20_25,(persons.AGEP >= 20) & (persons.AGEP <= 24)
+ages_25_30,county_id,persons,5000,ages_25_30,(persons.AGEP >= 25) & (persons.AGEP <= 29)
+ages_30_35,county_id,persons,5000,ages_30_35,(persons.AGEP >= 30) & (persons.AGEP <= 34)
+ages_35_40,county_id,persons,5000,ages_35_40,(persons.AGEP >= 35) & (persons.AGEP <= 39)
+ages_40_45,county_id,persons,5000,ages_40_45,(persons.AGEP >= 40) & (persons.AGEP <= 44)
+ages_45_50,county_id,persons,5000,ages_45_50,(persons.AGEP >= 45) & (persons.AGEP <= 49)
+ages_50_55,county_id,persons,5000,ages_50_55,(persons.AGEP >= 50) & (persons.AGEP <= 54)
+ages_55_60,county_id,persons,5000,ages_55_60,(persons.AGEP >= 55) & (persons.AGEP <= 59)
+ages_5_10,county_id,persons,5000,ages_5_10,(persons.AGEP >= 5) & (persons.AGEP <= 9)
+ages_60_65,county_id,persons,5000,ages_60_65,(persons.AGEP >= 60) & (persons.AGEP <= 64)
+ages_65_70,county_id,persons,5000,ages_65_70,(persons.AGEP >= 65) & (persons.AGEP <= 69)
+ages_70_75,county_id,persons,5000,ages_70_75,(persons.AGEP >= 70) & (persons.AGEP <= 74)
+ages_75_80,county_id,persons,5000,ages_75_80,(persons.AGEP >= 75) & (persons.AGEP <= 79)
+ages_80_85,county_id,persons,5000,ages_80_85,(persons.AGEP >= 80) & (persons.AGEP <= 84)
+ages_85_plus,county_id,persons,5000,ages_85_plus,persons.AGEP >= 85
+soc_1113,county_id,persons,5000,soc_1113,persons.occupation==1113
+soc_1517,county_id,persons,5000,soc_1517,persons.occupation==1517
+soc_19,county_id,persons,5000,soc_19,persons.occupation==19
+soc_21,county_id,persons,5000,soc_21,persons.occupation==21
+soc_23,county_id,persons,5000,soc_23,persons.occupation==23
+soc_25,county_id,persons,5000,soc_25,persons.occupation==25
+soc_27,county_id,persons,5000,soc_27,persons.occupation==27
+soc_2931,county_id,persons,5000,soc_2931,persons.occupation==2931
+soc_33,county_id,persons,5000,soc_33,persons.occupation==33
+soc_35,county_id,persons,5000,soc_35,persons.occupation==35
+soc_3739,county_id,persons,5000,soc_3739,persons.occupation==3739
+soc_4143,county_id,persons,5000,soc_4143,persons.occupation==4143
+soc_45,county_id,persons,5000,soc_45,persons.occupation==45
+soc_47,county_id,persons,5000,soc_47,persons.occupation==47
+soc_49,county_id,persons,5000,soc_49,persons.occupation==49
+soc_51,county_id,persons,5000,soc_51,persons.occupation==51
+soc_53,county_id,persons,5000,soc_53,persons.occupation==53
+soc_55,county_id,persons,5000,soc_55,persons.occupation==55

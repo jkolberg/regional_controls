@@ -1,0 +1,45 @@
+####################################################################
+# Census Getter Properties
+####################################################################
+state: 53
+counties: ['035', '033', '053', '061']
+forecast_year: 2050
+pums_year: 2024
+
+# Must create Env Variable holding census key. Put name of Var here:
+census_key: CENSUS_KEY
+
+# Local Data
+# ------------------------------------------------------------------
+data_dir: data
+output_dir: data # put output tables in data dir for easy access by popsim
+
+input_table_list:
+  - tablename: regional_controls
+    filename : REMI_OFM_v2022_Medium.xlsx
+
+pums_table_list:
+  - tablename: pums_hh
+    filename: psam_h53.csv
+  - tablename: pums_person
+    filename: psam_p53.csv
+  - tablename: puma_geog_lookup
+    filename: puma_geog_lookup_cnty.csv
+
+output_table_list:
+  - tablename: seed_households
+    filename: seed_households.csv
+  - tablename: seed_persons
+    filename: seed_persons.csv
+  - tablename: county_controls
+    filename: remi_controls.csv
+
+nan_fill: 0
+
+# pypyr steps to run
+steps:
+#  - steps.puma_county_lookup
+#  - steps.pums_download
+#  - steps.prepare_pums
+ - steps.remi_controls
+ - steps.write_tables
