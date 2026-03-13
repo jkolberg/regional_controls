@@ -57,9 +57,9 @@ comparison_controls_table: /annual_household_control_totals
 
 # pypyr steps to run
 steps:
-#  - steps.puma_county_lookup
-#  - steps.pums_download
-#  - steps.prepare_pums
+ - steps.puma_county_lookup
+ - steps.pums_download
+ - steps.prepare_pums
  - steps.load_data
  - steps.remi_controls
  - steps.write_tables
