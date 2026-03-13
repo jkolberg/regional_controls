@@ -3,6 +3,11 @@
 ####################################################################
 state: 53
 counties: ['035', '033', '053', '061']
+county_map:
+  King County: 53033
+  Kitsap County: 53035
+  Pierce County: 53053
+  Snohomish County: 53061
 forecast_year: 2050
 pums_year: 2024
 
@@ -14,9 +19,20 @@ census_key: CENSUS_KEY
 data_dir: data
 output_dir: data # put output tables in data dir for easy access by popsim
 
-input_table_list:
+# since REMI forecasts probably shouldn't be stored in the repo they will automatically
+# be copied to the data directory from the network path below if missing 
+regional_forecasts_dir: J:\Projects\Forecasts\_Regional\2026\REMI
+
+regional_forecast:
   - tablename: regional_controls
-    filename : REMI_OFM_v2022_Medium.xlsx
+    # filename : REMI_OFM_v2022_Low.xlsx
+    # filename : REMI_OFM_v2022_Medium.xlsx
+    # filename : REMI_OFM_v2022_High.xlsx
+    filename : REMI_Controls_Test_Low.xlsx
+
+input_table_list:
+  - tablename: occupation_crosswalk
+    filename: occupation_crosswalk.csv
 
 pums_table_list:
   - tablename: pums_hh
@@ -35,11 +51,19 @@ output_table_list:
     filename: remi_controls.csv
 
 nan_fill: 0
+urbansim_baseyear_cache: L:/base_year_2023_inputs/urbansim2_cache/2023
+comparison_controls_store: data/comparison_cache.h5
+comparison_controls_table: /annual_household_control_totals
 
 # pypyr steps to run
 steps:
 #  - steps.puma_county_lookup
 #  - steps.pums_download
 #  - steps.prepare_pums
+ - steps.load_data
  - steps.remi_controls
  - steps.write_tables
+ - steps.run_popsim
+ - steps.archive_popsim_output
+ - steps.comparison_cache_to_hdf5
+ - steps.results_summaries

@@ -1,5 +1,5 @@
 import pandas as pd
-from util import Util
+from utils import Util
 
 
 def get_filename(tablename, util):

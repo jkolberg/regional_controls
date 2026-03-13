@@ -1,7 +1,7 @@
 import pandas as pd
 import geopandas as gpd
 
-from util import Util
+from utils import Util
 
 
 #------------------------------

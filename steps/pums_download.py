@@ -4,7 +4,7 @@ from zipfile import ZipFile
 import io
 from urllib.request import urlopen
 
-from util import Util
+from utils import Util
 
 
 def get_data(census_year, pums_table, state_id_str, state_abbr, util, overwrite=True):

@@ -30,6 +30,10 @@ class Util:
         # Returns the output directory path from settings.yaml
         return self.settings.get('output_dir', 'output')
 
+    def get_setting(self, key, default=None):
+        # Returns a single setting value from settings.yaml
+        return self.settings.get(key, default)
+
     def get_table_list(self):
         # Returns a list of table names from settings.yaml
         return self.settings.get('input_table_list', [])

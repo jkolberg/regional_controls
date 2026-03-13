@@ -1,4 +1,4 @@
-from util import Util
+from utils.util import Util
 
 
 def write_tables(util):
