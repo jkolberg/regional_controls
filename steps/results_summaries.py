@@ -61,6 +61,7 @@ def build_results_summary(util: Util):
 			f"Synthetic households file not found: {synthetic_households_path}. Run PopulationSim first."
 		)
 
+	forecast_year = util.get_setting("forecast_year")
 	pums_hh = util.get_table("seed_households").copy()
 	synthetic_hh = pd.read_csv(synthetic_households_path)
 	control_totals = _load_control_totals(util)
@@ -116,7 +117,7 @@ def build_results_summary(util: Util):
 			"2024": control_totals.loc[control_totals.index == 2024]
 			.groupby("income_min")["total_number_of_households"]
 			.sum(),
-			"2050": control_totals.loc[control_totals.index == 2050]
+			str(forecast_year): control_totals.loc[control_totals.index == forecast_year]
 			.groupby("income_min")["total_number_of_households"]
 			.sum(),
 		}
@@ -126,7 +127,7 @@ def build_results_summary(util: Util):
 			"2024": control_totals.loc[control_totals.index == 2024]
 			.groupby("persons_min")["total_number_of_households"]
 			.sum(),
-			"2050": control_totals.loc[control_totals.index == 2050]
+			str(forecast_year): control_totals.loc[control_totals.index == forecast_year]
 			.groupby("persons_min")["total_number_of_households"]
 			.sum(),
 		}
@@ -136,7 +137,7 @@ def build_results_summary(util: Util):
 			"2024": control_totals.loc[control_totals.index == 2024]
 			.groupby("workers_min")["total_number_of_households"]
 			.sum(),
-			"2050": control_totals.loc[control_totals.index == 2050]
+			str(forecast_year): control_totals.loc[control_totals.index == forecast_year]
 			.groupby("workers_min")["total_number_of_households"]
 			.sum(),
 		}
@@ -151,7 +152,7 @@ def build_results_summary(util: Util):
 		x_income + width / 2,
 		synthetic_income_counts,
 		width=width,
-		label="Synthetic 2050",
+		label="Synthetic {}".format(forecast_year),
 		color="darkorange",
 	)
 	axes[0, 0].set_xticks(x_income)
@@ -167,7 +168,7 @@ def build_results_summary(util: Util):
 		x_size + width / 2,
 		synthetic_size_counts,
 		width=width,
-		label="Synthetic 2050",
+		label="Synthetic {}".format(forecast_year),
 		color="darkorange",
 	)
 	axes[0, 1].set_xticks(x_size)
@@ -189,7 +190,7 @@ def build_results_summary(util: Util):
 		x_workers + width / 2,
 		synthetic_worker_counts,
 		width=width,
-		label="Synthetic 2050",
+		label="Synthetic {}".format(forecast_year),
 		color="darkorange",
 	)
 	axes[0, 2].set_xticks(x_workers)
@@ -202,24 +203,24 @@ def build_results_summary(util: Util):
 	income_compare.plot(kind="bar", ax=axes[1, 0], color=["steelblue", "darkorange"])
 	axes[1, 0].set_xlabel("income_min")
 	axes[1, 0].set_ylabel("Total Number of Households")
-	axes[1, 0].set_title("Control Totals by Income: 2024 vs 2050")
+	axes[1, 0].set_title(f"Control Totals by Income: 2024 vs {forecast_year}")
 	axes[1, 0].tick_params(axis="x", rotation=45)
 
 	persons_compare.plot(kind="bar", ax=axes[1, 1], color=["steelblue", "darkorange"])
 	axes[1, 1].set_xlabel("persons_min")
 	axes[1, 1].set_ylabel("Total Number of Households")
-	axes[1, 1].set_title("Control Totals by Household Size: 2024 vs 2050")
+	axes[1, 1].set_title(f"Control Totals by Household Size: 2024 vs {forecast_year}")
 	axes[1, 1].tick_params(axis="x", rotation=0)
 
 	workers_compare.plot(kind="bar", ax=axes[1, 2], color=["steelblue", "darkorange"])
 	axes[1, 2].set_xlabel("workers_min")
 	axes[1, 2].set_ylabel("Total Number of Households")
-	axes[1, 2].set_title("Control Totals by Workers: 2024 vs 2050")
+	axes[1, 2].set_title(f"Control Totals by Workers: 2024 vs {forecast_year}")
 	axes[1, 2].tick_params(axis="x", rotation=0)
 
 	output_dir = repo_root / "output" / "results_summaries"
 	output_dir.mkdir(parents=True, exist_ok=True)
-	save_path = output_dir / f"{_get_regional_controls_stem(util)}.png"
+	save_path = output_dir / f"{_get_regional_controls_stem(util)}_{forecast_year}.png"
 
 	fig.suptitle("Household Comparison Summaries", y=1.02)
 	fig.tight_layout()

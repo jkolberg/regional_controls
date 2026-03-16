@@ -2,6 +2,23 @@ import pandas as pd
 from utils import Util
 
 
+def _extract_naics_2digit(value):
+    if pd.isna(value):
+        return pd.NA
+
+    text = str(value).strip().upper()
+    match = pd.Series([text]).str.extract(r"^(\d{2})", expand=False).iloc[0]
+    if pd.notna(match):
+        return int(match)
+
+    if text.startswith("3MS"):
+        return 33
+    if text.startswith("4MS"):
+        return 44
+
+    return pd.NA
+
+
 def get_filename(tablename, util):
     # Returns the filename for a given table from settings.yaml
     table_list = util.settings.get('pums_table_list', [])
@@ -122,7 +139,21 @@ def prepare_pums(util):
     }
     pums_person['SOCP_2digit'] = pums_person['SOCP'].str[:2].astype(float)
     pums_person['occupation'] = pums_person['SOCP_2digit'].map(occ_code_xwalk)
-    
+
+    ind_code_xwalk = {
+        11: 11, 21: 21, 22: 22, 23: 23, 31: 3133, 32: 3133, 33: 3133, 42: 42, 44: 4445, 45: 4445,
+        48: 4849, 49: 4849, 51: 51, 52: 52, 53: 53, 54: 54, 55: 55, 56: 56, 61: 61,
+        62: 62, 71: 71, 72: 72, 81: 81, 92: 92
+    }
+    # PyTables table format cannot serialize pandas nullable Int64 extension dtype.
+    # Keep these as numpy float64 (with NaN for missing) for HDF compatibility.
+    pums_person['NAICSP_2digit'] = pd.to_numeric(
+        pums_person['NAICSP'].apply(_extract_naics_2digit), errors='coerce'
+    ).astype('float64')
+    pums_person['industry'] = pd.to_numeric(
+        pums_person['NAICSP_2digit'].map(ind_code_xwalk), errors='coerce'
+    ).astype('float64')
+
     util.save_table("seed_persons", pums_person)
     util.save_table("seed_households", pums_hh)
 

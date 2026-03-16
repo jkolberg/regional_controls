@@ -6,6 +6,74 @@ import pandas as pd
 from utils import Util
 
 
+def _get_input_filename(util, tablename):
+    for table in util.get_table_list():
+        if table.get('tablename') == tablename:
+            return table.get('filename')
+    return None
+
+
+def _normalize_industry_text(value):
+    text = str(value).strip().lower()
+    text = text.replace("n.e.c.", "")
+    text = text.replace("not elsewhere classified", "")
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return " ".join(text.split())
+
+
+def _build_remi_industry_label_map(util):
+    configured_filename = _get_input_filename(util, 'industry_crosswalk')
+    if not configured_filename:
+        return {}
+
+    crosswalk_path = Path(util.get_data_dir()) / configured_filename
+    if not crosswalk_path.exists():
+        raise FileNotFoundError(
+            f"Configured industry crosswalk not found: {crosswalk_path}. Check configs_pypyr/settings.yaml input_table_list."
+        )
+
+    industry_crosswalk = pd.read_csv(crosswalk_path)
+    remi_col = 'remi_industry' if 'remi_industry' in industry_crosswalk.columns else 'industry_group_2nd_table'
+    industry_col = 'industry' if 'industry' in industry_crosswalk.columns else 'industry_code'
+    if remi_col not in industry_crosswalk.columns or industry_col not in industry_crosswalk.columns:
+        raise KeyError(
+            "industry_crosswalk must include remi_industry (or industry_group_2nd_table) and industry (or industry_code)."
+        )
+
+    label_map = (
+        industry_crosswalk[[remi_col, industry_col]]
+        .dropna()
+        .assign(
+            _key=lambda df: df[remi_col].apply(_normalize_industry_text),
+            _val=lambda df: "naics_" + df[industry_col].astype(str).str.strip(),
+        )
+        .set_index('_key')['_val']
+        .to_dict()
+    )
+
+    return label_map
+
+
+def _apply_industry_crosswalk_labels(remi, util):
+    category_col = 'category' if 'category' in remi.columns else 'Category'
+    label_map = _build_remi_industry_label_map(util)
+    if not label_map:
+        return remi
+
+    def map_category(value):
+        text = str(value)
+        match = re.search(r"^\s*Employment(?:\s+by\s+Major\s+Industry)?\s*-\s*(.*)$", text, flags=re.IGNORECASE)
+        if not match:
+            return value
+
+        key = _normalize_industry_text(match.group(1))
+        mapped = label_map.get(key)
+        return mapped if mapped else value
+
+    remi[category_col] = remi[category_col].apply(map_category)
+    return remi
+
+
 def _normalize_remi_age_category(value):
     if pd.isna(value):
         return value
@@ -110,6 +178,7 @@ def load_regional_controls_table(util):
     remi = remi.loc[remi['county_id'].notna()].copy()
     remi['county_id'] = remi['county_id'].astype(int)
     remi['Category'] = remi['Category'].apply(_normalize_remi_age_category)
+    remi = _apply_industry_crosswalk_labels(remi, util)
 
     util.save_table('regional_controls', remi)
 

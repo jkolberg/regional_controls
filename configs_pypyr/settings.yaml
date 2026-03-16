@@ -26,13 +26,15 @@ regional_forecasts_dir: J:\Projects\Forecasts\_Regional\2026\REMI
 regional_forecast:
   - tablename: regional_controls
     # filename : REMI_OFM_v2022_Low.xlsx
-    # filename : REMI_OFM_v2022_Medium.xlsx
+    filename : REMI_OFM_v2022_Medium.xlsx
     # filename : REMI_OFM_v2022_High.xlsx
-    filename : REMI_Controls_Test_Low.xlsx
+    # filename : REMI_Controls_Test_Low.xlsx
 
 input_table_list:
   - tablename: occupation_crosswalk
     filename: occupation_crosswalk.csv
+  - tablename: industry_crosswalk
+    filename: industry_crosswalk.csv
 
 pums_table_list:
   - tablename: pums_hh
@@ -57,9 +59,9 @@ comparison_controls_table: /annual_household_control_totals
 
 # pypyr steps to run
 steps:
- - steps.puma_county_lookup
- - steps.pums_download
- - steps.prepare_pums
+#  - steps.puma_county_lookup
+#  - steps.pums_download
+#  - steps.prepare_pums
  - steps.load_data
  - steps.remi_controls
  - steps.write_tables
