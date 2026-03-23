@@ -1,3 +1,5 @@
 *
 !.gitignore
 !occupation_crosswalk.csv
+!industry_crosswalk.csv
+!county_geog.csv

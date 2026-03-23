@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -49,7 +51,8 @@ def _load_control_totals(util: Util) -> pd.DataFrame:
 	if not store_path:
 		raise KeyError("comparison_controls_store is not configured in settings.yaml")
 
-	with pd.HDFStore(store_path) as store:
+	store_path = _get_repo_root() / store_path
+	with pd.HDFStore(str(store_path)) as store:
 		return store[table_name]
 
 
@@ -220,14 +223,18 @@ def build_results_summary(util: Util):
 
 	output_dir = repo_root / "output" / "results_summaries"
 	output_dir.mkdir(parents=True, exist_ok=True)
-	save_path = output_dir / f"{_get_regional_controls_stem(util)}_{forecast_year}.png"
+	today = pd.Timestamp.today().strftime("%Y%m%d")
+	save_path = output_dir / f"{_get_regional_controls_stem(util)}_{forecast_year}_{today}.png"
 
 	fig.suptitle("Household Comparison Summaries", y=1.02)
 	fig.tight_layout()
-	fig.savefig(save_path, dpi=300, bbox_inches="tight")
+	fig.savefig(str(save_path), dpi=300, bbox_inches="tight")
 	plt.close(fig)
 
-	print(f"Saved summary chart image to: {save_path}")
+	if not save_path.exists() or save_path.stat().st_size == 0:
+		print(f"WARNING: PNG file was not written or is empty: {save_path}")
+	else:
+		print(f"Saved summary chart image to: {save_path} ({save_path.stat().st_size:,} bytes)")
 
 
 def run_step(context):

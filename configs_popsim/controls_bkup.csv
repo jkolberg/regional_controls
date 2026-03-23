@@ -1,9 +1,23 @@
 target,geography,seed_table,importance,control_field,expression
 num_hh,county_id,households,1000000000,num_hh,(households.WGTP > 0) & (households.WGTP < np.inf)
-ages_0_24,county_id,persons,1000,ages_0_24,(persons.AGEP >= 0) & (persons.AGEP <= 24)
-ages_25_44,county_id,persons,1000,ages_25_44,(persons.AGEP >= 25) & (persons.AGEP <= 44)
-ages_45_64,county_id,persons,1000,ages_45_64,(persons.AGEP >= 45) & (persons.AGEP <= 64)
-ages_65_plus,county_id,persons,1000,ages_65_plus,persons.AGEP >= 65
+ages_0_4,county_id,persons,1000,ages_0_4,persons.AGEP <= 4
+ages_10_15,county_id,persons,1000,ages_10_15,(persons.AGEP >= 10) & (persons.AGEP <= 14)
+ages_15_20,county_id,persons,1000,ages_15_20,(persons.AGEP >= 15) & (persons.AGEP <= 19)
+ages_20_25,county_id,persons,1000,ages_20_25,(persons.AGEP >= 20) & (persons.AGEP <= 24)
+ages_25_30,county_id,persons,1000,ages_25_30,(persons.AGEP >= 25) & (persons.AGEP <= 29)
+ages_30_35,county_id,persons,1000,ages_30_35,(persons.AGEP >= 30) & (persons.AGEP <= 34)
+ages_35_40,county_id,persons,1000,ages_35_40,(persons.AGEP >= 35) & (persons.AGEP <= 39)
+ages_40_45,county_id,persons,1000,ages_40_45,(persons.AGEP >= 40) & (persons.AGEP <= 44)
+ages_45_50,county_id,persons,1000,ages_45_50,(persons.AGEP >= 45) & (persons.AGEP <= 49)
+ages_50_55,county_id,persons,1000,ages_50_55,(persons.AGEP >= 50) & (persons.AGEP <= 54)
+ages_55_60,county_id,persons,1000,ages_55_60,(persons.AGEP >= 55) & (persons.AGEP <= 59)
+ages_5_10,county_id,persons,1000,ages_5_10,(persons.AGEP >= 5) & (persons.AGEP <= 9)
+ages_60_65,county_id,persons,1000,ages_60_65,(persons.AGEP >= 60) & (persons.AGEP <= 64)
+ages_65_70,county_id,persons,1000,ages_65_70,(persons.AGEP >= 65) & (persons.AGEP <= 69)
+ages_70_75,county_id,persons,1000,ages_70_75,(persons.AGEP >= 70) & (persons.AGEP <= 74)
+ages_75_80,county_id,persons,1000,ages_75_80,(persons.AGEP >= 75) & (persons.AGEP <= 79)
+ages_80_85,county_id,persons,1000,ages_80_85,(persons.AGEP >= 80) & (persons.AGEP <= 84)
+ages_85_plus,county_id,persons,1000,ages_85_plus,persons.AGEP >= 85
 soc_1113,county_id,persons,5000,soc_1113,persons.occupation==1113
 soc_1517,county_id,persons,5000,soc_1517,persons.occupation==1517
 soc_19,county_id,persons,5000,soc_19,persons.occupation==19

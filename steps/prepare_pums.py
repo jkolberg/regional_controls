@@ -29,7 +29,7 @@ def get_filename(tablename, util):
 
 def _build_age_labels():
     age_bins = list(range(0, 90, 5)) + [float("inf")]
-    age_labels = ["ages_0_4"] + [f"ages_{i}_{i+5}" for i in range(5, 85, 5)] + ["ages_85_plus"]
+    age_labels = ["ages_0_4"] + [f"ages_{i}_{i+4}" for i in range(5, 85, 5)] + ["ages_85_plus"]
     return age_bins, age_labels
 
 
@@ -154,6 +154,7 @@ def prepare_pums(util):
         pums_person['NAICSP_2digit'].map(ind_code_xwalk), errors='coerce'
     ).astype('float64')
 
+    pums_hh['region'] = 1
     util.save_table("seed_persons", pums_person)
     util.save_table("seed_households", pums_hh)
 

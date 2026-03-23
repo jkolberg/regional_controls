@@ -97,7 +97,7 @@ def _normalize_remi_age_category(value):
         return "ages_85_plus"
     if start_age == 0:
         return "ages_0_4"
-    return f"ages_{start_age}_{start_age + 5}"
+    return f"ages_{start_age}_{start_age + 4}"
 
 
 def _regional_forecast_filename(util, tablename):

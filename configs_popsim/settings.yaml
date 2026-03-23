@@ -18,8 +18,8 @@ max_expansion_factor: 30
 #geographies: [PUMA, block_group]
 #geographies: [state, county, PUMA, tract, block_group]
 #geographies: [state, county, PUMA, block_group]
-geographies: [region,PUMA, county_id]
-seed_geography: PUMA
+geographies: [region, county_id]
+seed_geography: region
 
 
 # Tracing
@@ -51,7 +51,7 @@ input_table_list:
       SPORDER: per_num
 
   - tablename: geo_cross_walk
-    filename : puma_geog_lookup_cnty.csv
+    filename : county_geog.csv
 
   - tablename: county_id_control_data
     filename : remi_controls.csv
@@ -108,6 +108,8 @@ output_synthetic_population:
       - hh_id
       - per_num
       - RAC1P
+      - occupation
+      - industry
 
 
 # Steps for base mode

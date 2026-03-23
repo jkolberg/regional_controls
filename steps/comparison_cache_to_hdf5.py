@@ -5,6 +5,13 @@ from utils import Util
 def get_cache_dir(util):
     # Support both legacy and current setting names.
     cache_dir = util.get_setting('urbansim_cache_dir') or util.get_setting('urbansim_baseyear_cache')
+
+    # check to make sure the cache is accessible
+    if not Path(cache_dir).exists():
+        raise ConnectionError(
+            f"Unable to access network path: {cache_dir}. Make sure you are connected to the PSRC VPN or have access to the network drive."
+        )
+    
     return cache_dir
 
 def get_comparison_controls_store(util):
