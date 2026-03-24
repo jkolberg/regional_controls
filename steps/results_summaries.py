@@ -88,8 +88,8 @@ def build_results_summary(util: Util):
 	size_categories = list(range(1, 8))
 	size_labels = [str(i) for i in range(1, 7)] + ["7+"]
 
-	pums_hh["workers"] = np.where(pums_hh["worker_count"] > 4, 4, pums_hh["worker_count"])
-	synthetic_hh["workers"] = np.where(synthetic_hh["worker_count"] > 4, 4, synthetic_hh["worker_count"])
+	pums_hh["workers"] = np.where(pums_hh["workers"] > 4, 4, pums_hh["workers"])
+	synthetic_hh["workers"] = np.where(synthetic_hh["workers"] > 4, 4, synthetic_hh["workers"])
 	worker_categories = [0, 1, 2, 3, 4]
 	worker_labels = ["0", "1", "2", "3", "4+"]
 

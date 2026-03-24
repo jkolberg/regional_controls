@@ -92,7 +92,7 @@ output_synthetic_population:
     columns:
       - NP
       - VEH
-      - worker_count
+      - workers
       - HHT
       - HINCP
       - WGTP

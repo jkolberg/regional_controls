@@ -149,10 +149,7 @@ def _calculate_pums_rates(pums_person, pums_hh):
 	gq_denominator = pums_person.groupby(["county_id", "age_group"])["PWGTP"].sum()
 	gq_rates = (gq_numerator / gq_denominator).fillna(0)
 
-	if "TYPEHUGQ" in pums_hh.columns:
-		pums_hh_nongq = pums_hh.loc[pums_hh["TYPEHUGQ"] == 1].copy()
-	else:
-		pums_hh_nongq = pums_hh.loc[pums_hh["TYPE"].isin([1, 2])].copy()
+	pums_hh_nongq = pums_hh.loc[pums_hh["gq"] == 0].copy()
 	pums_person_nongq = pums_person.loc[pums_person["gq"] == 0].copy()
 
 	hh_weight = pums_hh_nongq.groupby(["county_id", "age_head_group"])["WGTP"].sum()
@@ -165,8 +162,12 @@ def _calculate_pums_rates(pums_person, pums_hh):
 	labor_force_participation_denominator = person_weight
 	labor_force_participation_rates = (labor_force_participation_numerator / labor_force_participation_denominator).fillna(0)
 
+	hhsz_numerator = pums_hh_nongq.groupby(['county_id','age_head_group','hhsz'])['WGTP'].sum()
+	hhsz_numerator.index = hhsz_numerator.index.set_names(['county_id', 'age_group', 'hhsz'])
+	hhsz_denominator = hh_weight
+	hhsz_rates = (hhsz_numerator / hhsz_denominator).fillna(0)
 
-	return gq_rates, headship_rates, labor_force_participation_rates
+	return gq_rates, headship_rates, labor_force_participation_rates, hhsz_rates
 
 def aggregate_age_groups(df):
 	df = df.reset_index()
@@ -198,7 +199,7 @@ def build_remi_controls(util):
 	pums_person = util.get_table("pums_person_prepared")
 	pums_hh = util.get_table("pums_households_prepared")
 	remi = util.get_table("regional_controls")
-	gq_rates, headship_rates, labor_force_participation_rates = _calculate_pums_rates(pums_person, pums_hh)
+	gq_rates, headship_rates, labor_force_participation_rates, hhsz_rates = _calculate_pums_rates(pums_person, pums_hh)
 
 	forecast_year = util.get_setting("forecast_year")
 	category_col = "category" if "category" in remi.columns else "Category"
@@ -217,6 +218,12 @@ def build_remi_controls(util):
 	remi_age["hhpop"] = remi_age["total_pop"] - remi_age["gq"]
 	remi_age["hh"] = remi_age["hhpop"] * remi_age.index.map(headship_rates).fillna(0)
 	remi_age["labor_force"] = remi_age.index.map(labor_force_participation_rates).fillna(0) * remi_age["hhpop"]
+	hhsz_rates_wide = hhsz_rates.unstack()
+	hhsz_rates_wide.columns = [f"hhsz{int(col)}" if pd.notna(col) else col for col in hhsz_rates_wide.columns]
+	remi_age = remi_age.merge(hhsz_rates_wide, left_index=True, right_index=True, how="left")
+	for col in hhsz_rates_wide.columns:
+		if col.startswith("hhsz"):
+			remi_age[col] = remi_age["hh"] * remi_age[col].fillna(0)
 	occupation_crosswalk, occupation_code_xwalk = _build_occupation_crosswalk(util)
 	category_lookup = (
 		occupation_crosswalk.assign(_key=occupation_crosswalk["occupation_group_2nd_table"].apply(_normalize_occ_text))
@@ -298,10 +305,10 @@ def build_remi_controls(util):
 		.sum()
 	)
 
-	remi_hh = remi_age.reset_index().groupby("county_id")["hh"].sum()
-	remi_age = aggregate_age_groups(remi_age).copy()
+	remi_hh = remi_age.reset_index().groupby("county_id")[["hh"]+list(hhsz_rates_wide.columns)].sum()
+	remi_age = aggregate_age_groups(remi_age[['hhpop']]).copy()
 	out = remi_age["hhpop"].unstack()
-	out["num_hh"] = out.index.map(remi_hh)
+	out = out.merge(remi_hh, left_index=True, right_index=True, how="left")
 
 	remi_emp["occupation_code"] = "soc_" + remi_emp["occupation_code"].astype(str)
 	emp_out = remi_emp.set_index(["county_id", "occupation_code"])["labor_force"].unstack()
@@ -310,7 +317,7 @@ def build_remi_controls(util):
 	industry_out = remi_ind.set_index(["county_id", "industry_code"])["labor_force"].unstack()
 	out = out.merge(industry_out, left_index=True, right_index=True, how="left")
 	out = out.fillna(0).round(0).astype(int)
-
+	out = out.rename(columns={"hh": "num_hh"})
 	out.index.name = "county_id"
 	util.save_table("county_controls", out.reset_index())
 

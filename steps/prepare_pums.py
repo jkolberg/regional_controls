@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from utils import Util
 
 
@@ -33,12 +34,6 @@ def _build_age_labels():
     return age_bins, age_labels
 
 
-def _household_record_mask(pums_hh):
-    if "TYPEHUGQ" in pums_hh.columns:
-        return pums_hh["TYPEHUGQ"] == 1
-    return pums_hh["TYPE"].isin([1, 2])
-
-
 def _add_county_id(pums_hh, pums_person, puma_geog_lookup):
     if "county_id" not in puma_geog_lookup.columns:
         return pums_hh, pums_person
@@ -63,27 +58,16 @@ def prepare_pums(util):
     pums_hh = pums_hh[pums_hh['PUMA'].isin(puma_geog_lookup['PUMA'])]
     pums_person = pums_person[pums_person['PUMA'].isin(puma_geog_lookup['PUMA'])]
 
-    # Filter for person/household matches
-    pums_person = pums_person[pums_person['SERIALNO'].isin(pums_hh['SERIALNO'])]
-    pums_hh = pums_hh[pums_hh['SERIALNO'].isin(pums_person['SERIALNO'])]
-
     # Add county IDs for PUMA geography and keep only mapped records.
     pums_hh, pums_person = _add_county_id(pums_hh, pums_person, puma_geog_lookup)
 
-    pums_person = pums_person[pums_person['SERIALNO'].isin(pums_hh['SERIALNO'])]
-    pums_hh = pums_hh[pums_hh['SERIALNO'].isin(pums_person['SERIALNO'])]
-    pums_person.index = pums_person['SERIALNO']
-    pums_hh.index = pums_hh['SERIALNO']
+    # remove records for vacant units
+    pums_hh = pums_hh.loc[pums_hh['NP'] > 0].copy()
 
-    hh_is_household = _household_record_mask(pums_hh)
-    household_type_col = 'TYPEHUGQ' if 'TYPEHUGQ' in pums_hh.columns else 'TYPE'
-    pums_person['household_type'] = pums_person['SERIALNO'].map(pums_hh[household_type_col])
-    if household_type_col == 'TYPEHUGQ':
-        person_is_household = pums_person['household_type'] == 1
-    else:
-        person_is_household = pums_person['household_type'].isin([1, 2])
-    pums_person['gq'] = 0
-    pums_person.loc[pums_person['household_type'].isna() | (~person_is_household), 'gq'] = 1
+    # set group quarters flag on household and person tables
+    pums_hh['gq'] = np.where(pums_hh['TYPEHUGQ'] == 1, 0, 1)
+    is_gq = pums_hh.loc[pums_hh['gq'] == 1, 'SERIALNO'].values
+    pums_person['gq'] = pums_person['SERIALNO'].map(pums_hh.set_index('SERIALNO')['gq'])
 
     age_bins, age_labels = _build_age_labels()
     pums_person['age_group'] = pd.cut(
@@ -100,27 +84,30 @@ def prepare_pums(util):
         right=False,
         include_lowest=True,
     )
+    
+    # Generate unique household ID "hhnum"
+    pums_hh['hhnum'] = [i+1 for i in range(len(pums_hh))]
+    pums_person['hhnum'] = 0
+    pums_person['hhnum'] = pums_person['SERIALNO'].map(pums_hh.set_index('SERIALNO')['hhnum'])
+    
+    # Calculate household workers based on person records
+    pums_person['is_worker'] = 0
+    pums_person.loc[pums_person['ESR'].isin([1,2,4,5]), 'is_worker'] = 1
+    worker_count = pums_person.groupby('hhnum')['is_worker'].sum().to_frame()
+    pums_hh['workers'] = 0
+    pums_hh.index = pums_hh.hhnum
+    pums_hh.update({'workers': worker_count.is_worker})
+    pums_hh['workers'] = pums_hh['workers'].clip(upper=4)
+
+    pums_hh['hhsz'] = pums_hh['NP'].clip(upper=5)
 
     # Save prepared PUMS tables for downstream control generation in remi_controls.
     util.save_table('pums_person_prepared', pums_person.reset_index(drop=True))
     util.save_table('pums_households_prepared', pums_hh.reset_index(drop=True))
 
     # Filter to non-group-quarter records for seed tables.
-    pums_hh = pums_hh.loc[hh_is_household].copy()
+    pums_hh = pums_hh.loc[pums_hh['gq'] == 0].copy()
     pums_person = pums_person.loc[pums_person['gq'] == 0].copy()
-
-    # Generate unique household ID "hhnum"
-    pums_hh['hhnum'] = [i+1 for i in range(len(pums_hh))]
-    pums_person['hhnum'] = 0
-    pums_person.update({'hhnum':pums_hh.hhnum})
-
-    # Calculate household workers based on person records
-    pums_person['is_worker'] = 0
-    pums_person.loc[pums_person['ESR'].isin([1,2,4,5]), 'is_worker'] = 1
-    worker_count = pums_person.groupby('hhnum')['is_worker'].sum().to_frame()
-    pums_hh['worker_count'] = -99
-    pums_hh.index = pums_hh.hhnum
-    pums_hh.update({'worker_count': worker_count.is_worker})
 
     # Combine households with workers >= 3
     #pums_hh.loc[pums_hh['worker_count'] >= 3,'worker_count'] = 3

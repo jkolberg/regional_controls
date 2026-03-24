@@ -62,10 +62,10 @@ steps:
 #  - steps.puma_county_lookup
 #  - steps.pums_download
 #  - steps.prepare_pums
- - steps.load_data
- - steps.remi_controls
- - steps.write_tables
- - steps.run_popsim
+#  - steps.load_data
+#  - steps.remi_controls
+#  - steps.write_tables
+#  - steps.run_popsim
 #  - steps.archive_popsim_output
- - steps.comparison_cache_to_hdf5
+#  - steps.comparison_cache_to_hdf5
  - steps.results_summaries
