@@ -10,8 +10,6 @@ county_map:
   Snohomish County: 53061
 base_year: 2023
 forecast_year: 2050
-pums_year: 2024
-
 
 # Must create Env Variable holding census key. Put name of Var here:
 census_key: CENSUS_KEY
@@ -63,12 +61,12 @@ comparison_controls_table: /annual_household_control_totals
 # pypyr steps to run
 steps:
 #  - steps.puma_county_lookup
-#  - steps.pums_download
-#  - steps.prepare_pums
-#  - steps.load_data
+ - steps.pums_download
+ - steps.prepare_pums
+ - steps.load_data
 #  - steps.check_remi_age_groups
-#  - steps.remi_controls
-#  - steps.write_tables
-#  - steps.run_popsim
+ - steps.remi_controls
+ - steps.write_tables
+ - steps.run_popsim
 #  - steps.comparison_cache_to_hdf5
  - steps.results_summaries

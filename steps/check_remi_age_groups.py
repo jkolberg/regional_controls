@@ -20,15 +20,15 @@ def _age_sort_key(value: str) -> int:
 	return 999
 
 
-def _build_age_proportion_comparison(util: Util, pums_year: int) -> pd.DataFrame:
+def _build_age_proportion_comparison(util: Util, base_year: int) -> pd.DataFrame:
 	remi_df = util.get_table("regional_controls").copy()
 	category_col = "Category" if "Category" in remi_df.columns else "category"
 
 	remi_age = remi_df.loc[
 		remi_df[category_col].astype(str).str.startswith("ages"),
-		[category_col, pums_year],
+		[category_col, base_year],
 	].copy()
-	remi_age_prop = remi_age.groupby(category_col)[pums_year].sum()
+	remi_age_prop = remi_age.groupby(category_col)[base_year].sum()
 	remi_age_prop = remi_age_prop / remi_age_prop.sum()
 
 	pums_person = util.get_table("pums_person_prepared")
@@ -36,8 +36,8 @@ def _build_age_proportion_comparison(util: Util, pums_year: int) -> pd.DataFrame
 	pums_age_prop = pums_person.groupby("age_group").size() / len(pums_person)
 
 	comparison = pd.DataFrame({
-		f"REMI_{pums_year}": remi_age_prop,
-		f"PUMS_{pums_year}": pums_age_prop,
+		f"REMI_{base_year}": remi_age_prop,
+		f"PUMS_{base_year}": pums_age_prop,
 	}).fillna(0)
 
 	comparison = comparison.assign(
@@ -48,13 +48,13 @@ def _build_age_proportion_comparison(util: Util, pums_year: int) -> pd.DataFrame
 
 
 def build_age_group_summary(util: Util) -> Path:
-	pums_year = int(util.get_setting("pums_year"))
-	comparison = _build_age_proportion_comparison(util, pums_year=pums_year)
+	base_year = int(util.get_setting("base_year"))
+	comparison = _build_age_proportion_comparison(util, base_year=base_year)
 
 	ax = comparison.plot.bar(figsize=(12, 6), color=["steelblue", "darkorange"])
 	ax.set_xlabel("Age Group")
 	ax.set_ylabel("Proportion of Population")
-	ax.set_title(f"REMI vs PUMS Age Group Proportions ({pums_year})")
+	ax.set_title(f"REMI vs PUMS Age Group Proportions ({base_year})")
 	ax.tick_params(axis="x", rotation=45)
 	ax.legend(title="")
 	plt.tight_layout()

@@ -40,9 +40,9 @@ def get_data(census_year, pums_table, state_id_str, state_abbr, util, overwrite=
 def run_step(context):
     print("Downloading PUMS data...")
     util = Util(settings_path=context['configs_dir'])
-    pums_year = util.settings['pums_year']
+    base_year = util.settings['base_year']
     state_id_str = str(util.settings['state'])
     state_abbr = us.states.mapping('fips', 'abbr')[state_id_str].lower()
-    get_data(pums_year,'h',state_id_str,state_abbr,util,overwrite=True)
-    get_data(pums_year,'p',state_id_str,state_abbr,util,overwrite=True)
+    get_data(base_year,'h',state_id_str,state_abbr,util,overwrite=True)
+    get_data(base_year,'p',state_id_str,state_abbr,util,overwrite=True)
     return context

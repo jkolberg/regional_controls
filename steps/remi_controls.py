@@ -185,6 +185,7 @@ def build_remi_controls(util):
 	age_col = category_col
 	year_col = forecast_year
 
+	# Process age groups and calculate gq, hh, hhpop - all coming from REMI pop by age
 	remi_age = remi.loc[
 		remi[age_col].astype(str).str.contains("ages_", na=False),
 		["county_id", age_col, year_col],
@@ -197,17 +198,16 @@ def build_remi_controls(util):
 	remi_age["hhpop"] = remi_age["total_pop"] - remi_age["gq"]
 	remi_age["hh"] = remi_age["hhpop"] * remi_age.index.map(headship_rates).fillna(0)
 
+	# Calculate labor force by industry and occupation using Pums-workers to REMI-employment ratios
 	remi_emp = _process_occupation_codes(remi, util, category_col, year_col)
 	remi_ind = _process_industry_codes(remi, util, category_col, year_col)
 
 	non_gq_workers_ind = get_non_gq_workers(pums_person, 'industry')
 	worker_to_emp_ratio_ind = get_workers_to_remi_emp_ratio(util, non_gq_workers_ind, util.get_setting('base_year'), category_col)
-	print(worker_to_emp_ratio_ind)
 	remi_ind['industry'] = pd.to_numeric(remi_ind['industry'], errors='coerce')
 	remi_ind = remi_ind.set_index(['county_id','industry'])['employment']
 	remi_labor_force_ind = remi_ind * worker_to_emp_ratio_ind
 	
-
 	non_gq_workers_occ = get_non_gq_workers(pums_person, 'occupation')
 	worker_to_emp_ratio_occ = get_workers_to_remi_emp_ratio_occ(util, non_gq_workers_occ, util.get_setting('base_year'), category_col)
 	remi_emp = remi_emp.rename(columns={'occupation_code':'occupation'}).set_index(['county_id','occupation'])['employment']
@@ -229,11 +229,13 @@ def build_remi_controls(util):
 	out['hh'] = hh_out
 	out = out.merge(hhsz_out, left_index=True, right_index=True, how="left")
 	out = out.merge(remi_workers_out, left_index=True, right_index=True, how="left")
+	# merge labor force by industry and occupation
 	out_labor_force_ind = remi_labor_force_ind.unstack().add_prefix('naics_')
 	out = out.merge(out_labor_force_ind, left_index=True, right_index=True, how="left")
 	out_labor_force_occ = remi_labor_force_occ.unstack().add_prefix('soc_')
 	out = out.merge(out_labor_force_occ, left_index=True, right_index=True, how="left")
 	out = out.fillna(0).round(0).astype(int)
+	# clean up and save county_controls (marginals) table for use later by popsim
 	out = out.rename(columns={"hh": "num_hh"})
 	out.index.name = "county_id"
 	util.save_table("county_controls", out.reset_index())
