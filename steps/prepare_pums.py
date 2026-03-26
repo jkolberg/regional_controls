@@ -1,6 +1,104 @@
+import re
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 from utils import Util
+
+
+def _get_input_filename(util, tablename):
+    for table in util.get_table_list():
+        if table.get("tablename") == tablename:
+            return table.get("filename")
+    return None
+
+
+def _pick_first_existing_column(df, candidates):
+    for col in candidates:
+        if col in df.columns:
+            return col
+    return None
+
+
+def _normalize_industry_text(value):
+    text = str(value).strip().lower()
+    text = text.replace("n.e.c.", "")
+    text = text.replace("not elsewhere classified", "")
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return " ".join(text.split())
+
+
+def _build_occupation_crosswalk(util):
+    data_dir = Path(util.get_data_dir())
+    configured_filename = _get_input_filename(util, "occupation_crosswalk")
+    if not configured_filename:
+        raise FileNotFoundError(
+            "No occupation crosswalk configured. Add input_table_list tablename=occupation_crosswalk in configs_pypyr/settings.yaml."
+        )
+
+    crosswalk_path = data_dir / configured_filename
+    if not crosswalk_path.exists():
+        raise FileNotFoundError(
+            f"Configured occupation crosswalk not found: {crosswalk_path}. Check configs_pypyr/settings.yaml input_table_list."
+        )
+
+    occupation_crosswalk = pd.read_csv(crosswalk_path)
+    occupation_crosswalk["soc_2digit_codes"] = occupation_crosswalk["soc_2digit_codes"].apply(
+        lambda value: tuple(int(code.strip()) for code in str(value).split(",") if code.strip())
+    )
+
+    occupation_code_xwalk = {}
+    for _, row in occupation_crosswalk[["soc_2digit_codes", "occupation_code"]].iterrows():
+        grouped_code = int(row["occupation_code"])
+        for two_digit_code in row["soc_2digit_codes"]:
+            occupation_code_xwalk[two_digit_code] = grouped_code
+
+    return occupation_crosswalk, occupation_code_xwalk
+
+
+def _build_industry_lookup(util):
+    data_dir = Path(util.get_data_dir())
+    configured_filename = _get_input_filename(util, "industry_crosswalk")
+    if not configured_filename:
+        raise FileNotFoundError(
+            "No industry crosswalk configured. Add input_table_list tablename=industry_crosswalk in configs_pypyr/settings.yaml."
+        )
+
+    crosswalk_path = data_dir / configured_filename
+    if not crosswalk_path.exists():
+        raise FileNotFoundError(
+            f"Configured industry crosswalk not found: {crosswalk_path}. Check configs_pypyr/settings.yaml input_table_list."
+        )
+
+    industry_crosswalk = pd.read_csv(crosswalk_path)
+    remi_col = _pick_first_existing_column(industry_crosswalk, ["remi_industry", "industry_group_2nd_table"])
+    naics_col = _pick_first_existing_column(industry_crosswalk, ["naics", "naics_2digit_codes"])
+    industry_col = _pick_first_existing_column(industry_crosswalk, ["industry", "industry_code"])
+    if not remi_col or not naics_col or not industry_col:
+        raise KeyError(
+            "industry_crosswalk must include REMI label, NAICS 2-digit list, and grouped industry code columns. "
+            "Supported headers are remi_industry/industry_group_2nd_table, naics/naics_2digit_codes, and industry/industry_code."
+        )
+
+    def _parse_naics_list(value):
+        return tuple(int(code.strip()) for code in str(value).split(",") if code.strip())
+
+    industry_crosswalk["_naics_2digit_codes"] = industry_crosswalk[naics_col].apply(_parse_naics_list)
+    industry_crosswalk["_industry_code"] = industry_crosswalk[industry_col].astype(str).str.strip().str.upper()
+
+    industry_lookup = (
+        industry_crosswalk.assign(_key=industry_crosswalk[remi_col].apply(_normalize_industry_text))
+        .set_index("_key")["_industry_code"]
+        .to_dict()
+    )
+
+    industry_code_xwalk = {}
+    for _, row in industry_crosswalk[["_naics_2digit_codes", "_industry_code"]].iterrows():
+        industry_code = row["_industry_code"]
+        for two_digit_code in row["_naics_2digit_codes"]:
+            industry_code_xwalk[int(two_digit_code)] = industry_code
+
+    return industry_lookup, industry_code_xwalk
 
 
 def _extract_naics_2digit(value):
@@ -101,14 +199,6 @@ def prepare_pums(util):
 
     pums_hh['hhsz'] = pums_hh['NP'].clip(upper=5)
 
-    # Save prepared PUMS tables for downstream control generation in remi_controls.
-    util.save_table('pums_person_prepared', pums_person.reset_index(drop=True))
-    util.save_table('pums_households_prepared', pums_hh.reset_index(drop=True))
-
-    # Filter to non-group-quarter records for seed tables.
-    pums_hh = pums_hh.loc[pums_hh['gq'] == 0].copy()
-    pums_person = pums_person.loc[pums_person['gq'] == 0].copy()
-
     # Combine households with workers >= 3
     #pums_hh.loc[pums_hh['worker_count'] >= 3,'worker_count'] = 3
 
@@ -118,28 +208,33 @@ def prepare_pums(util):
     # adjust home value
     pums_hh['VALP'] = pums_hh['VALP'] * (pums_hh.ADJHSG/1000000)
 
-    # add occupation group codes
-    occ_code_xwalk = {
-        11: 1113, 13: 1113, 15: 1517, 17: 1517, 19: 19, 21: 21, 23: 23, 25: 25,
-        27: 27, 29: 2931, 31: 2931, 33: 33, 35: 35, 37: 3739, 39: 3739, 41: 4143,
-        43: 4143, 45: 45, 47: 47, 49: 49, 51: 51, 53: 53, 55: 55
-    }
+    # add occupation group codes from crosswalk
+    _, occupation_code_xwalk = _build_occupation_crosswalk(util)
     pums_person['SOCP_2digit'] = pums_person['SOCP'].str[:2].astype(float)
-    pums_person['occupation'] = pums_person['SOCP_2digit'].map(occ_code_xwalk)
+    pums_person['occupation'] = pums_person['SOCP_2digit'].map(occupation_code_xwalk)
+    pums_person.loc[pums_person['is_worker'] == 0, 'occupation'] = 0
 
-    ind_code_xwalk = {
-        11: 11, 21: 21, 22: 22, 23: 23, 31: 3133, 32: 3133, 33: 3133, 42: 42, 44: 4445, 45: 4445,
-        48: 4849, 49: 4849, 51: 51, 52: 52, 53: 53, 54: 54, 55: 55, 56: 56, 61: 61,
-        62: 62, 71: 71, 72: 72, 81: 81, 92: 92
-    }
+    # add industry codes from crosswalk
+    _, industry_code_xwalk = _build_industry_lookup(util)
     # PyTables table format cannot serialize pandas nullable Int64 extension dtype.
     # Keep these as numpy float64 (with NaN for missing) for HDF compatibility.
     pums_person['NAICSP_2digit'] = pd.to_numeric(
         pums_person['NAICSP'].apply(_extract_naics_2digit), errors='coerce'
     ).astype('float64')
     pums_person['industry'] = pd.to_numeric(
-        pums_person['NAICSP_2digit'].map(ind_code_xwalk), errors='coerce'
-    ).astype('float64')
+        pums_person['NAICSP_2digit'].astype('Int64').map(industry_code_xwalk),
+        errors='coerce',
+    ).fillna(0).astype('float64')
+    pums_person.loc[pums_person['COW'].isin([3,4,5]), 'industry'] = 98
+    pums_person.loc[pums_person['is_worker'] == 0, 'industry'] = 0
+
+    # Save prepared PUMS tables for downstream control generation in remi_controls.
+    util.save_table('pums_person_prepared', pums_person.reset_index(drop=True))
+    util.save_table('pums_households_prepared', pums_hh.reset_index(drop=True))
+
+    # Filter to non-group-quarter records for seed tables.
+    pums_hh = pums_hh.loc[pums_hh['gq'] == 0].copy()
+    pums_person = pums_person.loc[pums_person['gq'] == 0].copy()
 
     pums_hh['region'] = 1
     util.save_table("seed_persons", pums_person)

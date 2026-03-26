@@ -99,21 +99,27 @@ def build_results_summary(util: Util):
 		.reindex([1, 2, 3, 4], fill_value=0)
 		.values
 	)
+	pums_income_props = pums_income_counts / pums_income_counts.sum()
 	synthetic_income_counts = (
 		synthetic_hh["income"].value_counts().reindex(income_bin_labels, fill_value=0).values
 	)
+	synthetic_income_props = synthetic_income_counts / synthetic_income_counts.sum()
 	pums_size_counts = (
 		pums_hh.groupby("hhsz")["WGTP"].sum().reindex(size_categories, fill_value=0).values
 	)
+	pums_size_props = pums_size_counts / pums_size_counts.sum()
 	synthetic_size_counts = (
 		synthetic_hh.groupby("hhsz").size().reindex(size_categories, fill_value=0).values
 	)
+	synthetic_size_props = synthetic_size_counts / synthetic_size_counts.sum()
 	pums_worker_counts = (
 		pums_hh.groupby("workers")["WGTP"].sum().reindex(worker_categories, fill_value=0).values
 	)
+	pums_worker_props = pums_worker_counts / pums_worker_counts.sum()
 	synthetic_worker_counts = (
 		synthetic_hh.groupby("workers").size().reindex(worker_categories, fill_value=0).values
 	)
+	synthetic_worker_props = synthetic_worker_counts / synthetic_worker_counts.sum()
 
 	income_compare = pd.DataFrame(
 		{
@@ -146,14 +152,27 @@ def build_results_summary(util: Util):
 		}
 	).fillna(0).sort_index()
 
+	for col in income_compare.columns:
+		total = income_compare[col].sum()
+		if total > 0:
+			income_compare[col] = income_compare[col] / total
+	for col in persons_compare.columns:
+		total = persons_compare[col].sum()
+		if total > 0:
+			persons_compare[col] = persons_compare[col] / total
+	for col in workers_compare.columns:
+		total = workers_compare[col].sum()
+		if total > 0:
+			workers_compare[col] = workers_compare[col] / total
+
 	fig, axes = plt.subplots(2, 3, figsize=(22, 12))
 	width = 0.4
 
 	x_income = np.arange(len(income_bin_labels))
-	axes[0, 0].bar(x_income - width / 2, pums_income_counts, width=width, label="PUMS", color="steelblue")
+	axes[0, 0].bar(x_income - width / 2, pums_income_props, width=width, label="PUMS", color="steelblue")
 	axes[0, 0].bar(
 		x_income + width / 2,
-		synthetic_income_counts,
+		synthetic_income_props,
 		width=width,
 		label="Synthetic {}".format(forecast_year),
 		color="darkorange",
@@ -161,15 +180,15 @@ def build_results_summary(util: Util):
 	axes[0, 0].set_xticks(x_income)
 	axes[0, 0].set_xticklabels(income_bin_labels, rotation=20, ha="right")
 	axes[0, 0].set_xlabel("Income Group")
-	axes[0, 0].set_ylabel("Number of Households")
+	axes[0, 0].set_ylabel("Proportion of Households")
 	axes[0, 0].set_title("Income Group Comparison")
 	axes[0, 0].legend()
 
 	x_size = np.arange(len(size_categories))
-	axes[0, 1].bar(x_size - width / 2, pums_size_counts, width=width, label="PUMS", color="steelblue")
+	axes[0, 1].bar(x_size - width / 2, pums_size_props, width=width, label="PUMS", color="steelblue")
 	axes[0, 1].bar(
 		x_size + width / 2,
-		synthetic_size_counts,
+		synthetic_size_props,
 		width=width,
 		label="Synthetic {}".format(forecast_year),
 		color="darkorange",
@@ -177,21 +196,21 @@ def build_results_summary(util: Util):
 	axes[0, 1].set_xticks(x_size)
 	axes[0, 1].set_xticklabels(size_labels)
 	axes[0, 1].set_xlabel("Household Size")
-	axes[0, 1].set_ylabel("Number of Households")
+	axes[0, 1].set_ylabel("Proportion of Households")
 	axes[0, 1].set_title("Household Size Comparison")
 	axes[0, 1].legend()
 
 	x_workers = np.arange(len(worker_categories))
 	axes[0, 2].bar(
 		x_workers - width / 2,
-		pums_worker_counts,
+		pums_worker_props,
 		width=width,
 		label="PUMS",
 		color="steelblue",
 	)
 	axes[0, 2].bar(
 		x_workers + width / 2,
-		synthetic_worker_counts,
+		synthetic_worker_props,
 		width=width,
 		label="Synthetic {}".format(forecast_year),
 		color="darkorange",
@@ -199,31 +218,31 @@ def build_results_summary(util: Util):
 	axes[0, 2].set_xticks(x_workers)
 	axes[0, 2].set_xticklabels(worker_labels)
 	axes[0, 2].set_xlabel("Workers in Household")
-	axes[0, 2].set_ylabel("Number of Households")
+	axes[0, 2].set_ylabel("Proportion of Households")
 	axes[0, 2].set_title("Workers per Household Comparison")
 	axes[0, 2].legend()
 
 	income_compare.plot(kind="bar", ax=axes[1, 0], color=["steelblue", "darkorange"])
 	axes[1, 0].set_xlabel("income_min")
-	axes[1, 0].set_ylabel("Total Number of Households")
+	axes[1, 0].set_ylabel("Proportion of Households")
 	axes[1, 0].set_title(f"Control Totals by Income: 2024 vs {forecast_year}")
 	axes[1, 0].tick_params(axis="x", rotation=45)
 
 	persons_compare.plot(kind="bar", ax=axes[1, 1], color=["steelblue", "darkorange"])
 	axes[1, 1].set_xlabel("persons_min")
-	axes[1, 1].set_ylabel("Total Number of Households")
+	axes[1, 1].set_ylabel("Proportion of Households")
 	axes[1, 1].set_title(f"Control Totals by Household Size: 2024 vs {forecast_year}")
 	axes[1, 1].tick_params(axis="x", rotation=0)
 
 	workers_compare.plot(kind="bar", ax=axes[1, 2], color=["steelblue", "darkorange"])
 	axes[1, 2].set_xlabel("workers_min")
-	axes[1, 2].set_ylabel("Total Number of Households")
+	axes[1, 2].set_ylabel("Proportion of Households")
 	axes[1, 2].set_title(f"Control Totals by Workers: 2024 vs {forecast_year}")
 	axes[1, 2].tick_params(axis="x", rotation=0)
 
 	output_dir = repo_root / "output" / "results_summaries"
 	output_dir.mkdir(parents=True, exist_ok=True)
-	today = pd.Timestamp.today().strftime("%Y%m%d")
+	today = pd.Timestamp.today().strftime("%Y%m%d%M")
 	save_path = output_dir / f"{_get_regional_controls_stem(util)}_{forecast_year}_{today}.png"
 
 	fig.suptitle("Household Comparison Summaries", y=1.02)

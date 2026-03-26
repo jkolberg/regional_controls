@@ -8,8 +8,10 @@ county_map:
   Kitsap County: 53035
   Pierce County: 53053
   Snohomish County: 53061
-forecast_year: 2024
+base_year: 2023
+forecast_year: 2050
 pums_year: 2024
+
 
 # Must create Env Variable holding census key. Put name of Var here:
 census_key: CENSUS_KEY
@@ -29,6 +31,7 @@ regional_forecast:
     filename : REMI_OFM_v2022_Medium.xlsx
     # filename : REMI_OFM_v2022_High.xlsx
     # filename : REMI_Controls_Test_Low.xlsx
+    # filename : PUMS_test.xlsx
 
 input_table_list:
   - tablename: occupation_crosswalk
@@ -63,9 +66,9 @@ steps:
 #  - steps.pums_download
 #  - steps.prepare_pums
 #  - steps.load_data
+#  - steps.check_remi_age_groups
 #  - steps.remi_controls
 #  - steps.write_tables
 #  - steps.run_popsim
-#  - steps.archive_popsim_output
 #  - steps.comparison_cache_to_hdf5
  - steps.results_summaries

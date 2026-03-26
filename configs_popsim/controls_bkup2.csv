@@ -1,0 +1,49 @@
+target,geography,seed_table,importance,control_field,expression
+num_hh,county_id,households,1000000000,num_hh,(households.WGTP > 0) & (households.WGTP < np.inf)
+hhsz1,county_id,households,10000,hhsz1,households.hhsz == 1
+hhsz2,county_id,households,10000,hhsz2,households.hhsz == 2
+hhsz3,county_id,households,10000,hhsz3,households.hhsz == 3
+hhsz4,county_id,households,10000,hhsz4,households.hhsz == 4
+hhsz5,county_id,households,10000,hhsz5,households.hhsz == 5
+ages_0_24,county_id,persons,1000,ages_0_24,(persons.AGEP >= 0) & (persons.AGEP <= 24)
+ages_25_44,county_id,persons,1000,ages_25_44,(persons.AGEP >= 25) & (persons.AGEP <= 44)
+ages_45_64,county_id,persons,1000,ages_45_64,(persons.AGEP >= 45) & (persons.AGEP <= 64)
+ages_65_plus,county_id,persons,1000,ages_65_plus,persons.AGEP >= 65
+soc_1113,county_id,persons,5000,soc_1113,persons.occupation==1113
+soc_1517,county_id,persons,5000,soc_1517,persons.occupation==1517
+soc_19,county_id,persons,5000,soc_19,persons.occupation==19
+soc_21,county_id,persons,5000,soc_21,persons.occupation==21
+soc_23,county_id,persons,5000,soc_23,persons.occupation==23
+soc_25,county_id,persons,5000,soc_25,persons.occupation==25
+soc_27,county_id,persons,5000,soc_27,persons.occupation==27
+soc_2931,county_id,persons,5000,soc_2931,persons.occupation==2931
+soc_33,county_id,persons,5000,soc_33,persons.occupation==33
+soc_35,county_id,persons,5000,soc_35,persons.occupation==35
+soc_3739,county_id,persons,5000,soc_3739,persons.occupation==3739
+soc_4143,county_id,persons,5000,soc_4143,persons.occupation==4143
+soc_45,county_id,persons,5000,soc_45,persons.occupation==45
+soc_47,county_id,persons,5000,soc_47,persons.occupation==47
+soc_49,county_id,persons,5000,soc_49,persons.occupation==49
+soc_51,county_id,persons,5000,soc_51,persons.occupation==51
+soc_53,county_id,persons,5000,soc_53,persons.occupation==53
+soc_55,county_id,persons,5000,soc_55,persons.occupation==55
+naics_11,county_id,persons,5000,naics_11,persons.industry==11
+naics_21,county_id,persons,5000,naics_21,persons.industry==21
+naics_22,county_id,persons,5000,naics_22,persons.industry==22
+naics_23,county_id,persons,5000,naics_23,persons.industry==23
+naics_3133,county_id,persons,5000,naics_3133,persons.industry==3133
+naics_42,county_id,persons,5000,naics_42,persons.industry==42
+naics_4445,county_id,persons,5000,naics_4445,persons.industry==4445
+naics_4849,county_id,persons,5000,naics_4849,persons.industry==4849
+naics_51,county_id,persons,5000,naics_51,persons.industry==51
+naics_52,county_id,persons,5000,naics_52,persons.industry==52
+naics_53,county_id,persons,5000,naics_53,persons.industry==53
+naics_54,county_id,persons,5000,naics_54,persons.industry==54
+naics_55,county_id,persons,5000,naics_55,persons.industry==55
+naics_56,county_id,persons,5000,naics_56,persons.industry==56
+naics_61,county_id,persons,5000,naics_61,persons.industry==61
+naics_62,county_id,persons,5000,naics_62,persons.industry==62
+naics_71,county_id,persons,5000,naics_71,persons.industry==71
+naics_72,county_id,persons,5000,naics_72,persons.industry==72
+naics_81,county_id,persons,5000,naics_81,persons.industry==81
+naics_92,county_id,persons,5000,naics_92,persons.industry==92
