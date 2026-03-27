@@ -77,10 +77,7 @@ pums_hh_c = pums_hh.copy()
 pums_hh_c["income_quartile"] = pd.cut(
     pums_hh_c["HINCP"], bins=income_bin_edges, labels=income_bin_labels, include_lowest=True
 )
-if "hhsz" not in pums_hh_c.columns:
-  pums_hh_c["hhsz"] = np.where(pums_hh_c["NP"] > 7, 7, pums_hh_c["NP"])
-else:
-  pums_hh_c["hhsz"] = np.where(pums_hh_c["hhsz"] > 7, 7, pums_hh_c["hhsz"])
+pums_hh_c["hhsz"] = np.where(pums_hh_c["hhsz"] > 7, 7, pums_hh_c["hhsz"])
 pums_hh_c["workers_capped"] = np.where(pums_hh_c["workers"] > 4, 4, pums_hh_c["workers"])
 
 pums_income_counts = (
@@ -124,10 +121,7 @@ for fc in forecast_names:
     syn_hh["income_quartile"] = pd.cut(
         syn_hh["HINCP"], bins=income_bin_edges, labels=income_bin_labels, include_lowest=True
     )
-    if "hhsz" not in syn_hh.columns:
-      syn_hh["hhsz"] = np.where(syn_hh["NP"] > 7, 7, syn_hh["NP"])
-    else:
-      syn_hh["hhsz"] = np.where(syn_hh["hhsz"] > 7, 7, syn_hh["hhsz"])
+    syn_hh["hhsz"] = np.where(syn_hh["hhsz"] > 7, 7, syn_hh["hhsz"])
     syn_hh["workers_capped"] = np.where(syn_hh["workers"] > 4, 4, syn_hh["workers"])
 
     syn_income = syn_hh["income_quartile"].value_counts().reindex(income_bin_labels, fill_value=0)
