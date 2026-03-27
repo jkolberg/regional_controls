@@ -184,7 +184,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 
 # Charts
 
-## Row {height="500px"}
+## Row
 
 ### Column
 
@@ -254,7 +254,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-## Row {height="500px"}
+## Row
 
 ### Column
 
