@@ -90,7 +90,7 @@ output_synthetic_population:
   households:
     filename: synthetic_households.csv
     columns:
-      - NP
+      - hhsz
       - VEH
       - workers
       - HHT

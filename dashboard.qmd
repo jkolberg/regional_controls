@@ -1,0 +1,319 @@
+---
+title: "Regional Controls — Forecast Comparison Dashboard"
+format:
+  dashboard:
+    orientation: columns
+    theme: cosmo
+    output-file: index.html
+    nav-buttons:
+      - icon: github
+        href: https://github.com
+---
+
+```{python}
+#| output: false
+
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+
+# ---------------------------------------------------------------------------
+# Discover available forecasts
+# ---------------------------------------------------------------------------
+archive_dir = Path("output/archive")
+forecast_names = sorted(
+    [d.name for d in archive_dir.iterdir() if d.is_dir()],
+    reverse=True,
+)
+
+# ---------------------------------------------------------------------------
+# Load PUMS base-year data (constant across forecasts)
+# ---------------------------------------------------------------------------
+with pd.HDFStore("data/pipeline.h5") as store:
+    pums_hh = store["seed_households"]
+    pums_persons = store["seed_persons"]
+
+# --- Income quartile bins (dynamic, weighted) ---
+weighted_income = pums_hh[["HINCP", "WGTP"]].dropna().copy()
+weighted_income = weighted_income.loc[weighted_income["WGTP"] > 0].sort_values("HINCP")
+cum_weight_share = weighted_income["WGTP"].cumsum() / weighted_income["WGTP"].sum()
+weighted_cutoffs = np.interp([0.25, 0.5, 0.75], cum_weight_share, weighted_income["HINCP"])
+income_bin_edges = [-np.inf, *weighted_cutoffs.tolist(), np.inf]
+cutoff_k = np.rint(weighted_cutoffs / 1000).astype(int)
+income_bin_labels = [
+    f"up to ${cutoff_k[0]:,}k",
+    f"${cutoff_k[0]:,}k–${cutoff_k[1]:,}k",
+    f"${cutoff_k[1]:,}k–${cutoff_k[2]:,}k",
+    f"${cutoff_k[2]:,}k+",
+]
+
+# --- Household size categories ---
+size_categories = list(range(1, 8))
+size_labels = [str(i) for i in range(1, 7)] + ["7+"]
+
+# --- Workers per household categories ---
+worker_categories = [0, 1, 2, 3, 4]
+worker_labels = ["0", "1", "2", "3", "4+"]
+
+# --- Age 5-year bins ---
+age_bins = list(range(0, 90, 5)) + [float("inf")]
+age_labels = ["0–4"] + [f"{i}–{i+4}" for i in range(5, 85, 5)] + ["85+"]
+
+# ---------------------------------------------------------------------------
+# Compute PUMS weighted distributions
+# ---------------------------------------------------------------------------
+pums_hh_c = pums_hh.copy()
+pums_hh_c["income_quartile"] = pd.cut(
+    pums_hh_c["HINCP"], bins=income_bin_edges, labels=income_bin_labels, include_lowest=True
+)
+pums_hh_c["hhsz"] = np.where(pums_hh_c["NP"] > 7, 7, pums_hh_c["NP"])
+pums_hh_c["workers_capped"] = np.where(pums_hh_c["workers"] > 4, 4, pums_hh_c["workers"])
+
+pums_income_counts = (
+    pums_hh_c.groupby("income_quartile", observed=False)["WGTP"]
+    .sum()
+    .reindex(income_bin_labels, fill_value=0)
+)
+pums_income_props = (pums_income_counts / pums_income_counts.sum()).values
+
+pums_size_counts = (
+    pums_hh_c.groupby("hhsz")["WGTP"].sum().reindex(size_categories, fill_value=0)
+)
+pums_size_props = (pums_size_counts / pums_size_counts.sum()).values
+
+pums_worker_counts = (
+    pums_hh_c.groupby("workers_capped")["WGTP"].sum().reindex(worker_categories, fill_value=0)
+)
+pums_worker_props = (pums_worker_counts / pums_worker_counts.sum()).values
+
+pums_persons_c = pums_persons.copy()
+pums_persons_c["age_bin"] = pd.cut(
+    pums_persons_c["AGEP"], bins=age_bins, labels=age_labels, right=False, include_lowest=True
+)
+pums_age_counts = (
+    pums_persons_c.groupby("age_bin", observed=False)["PWGTP"]
+    .sum()
+    .reindex(age_labels, fill_value=0)
+)
+pums_age_props = (pums_age_counts / pums_age_counts.sum()).values
+
+# ---------------------------------------------------------------------------
+# Compute synthetic distributions for every forecast
+# ---------------------------------------------------------------------------
+synthetic_data = {}
+for fc in forecast_names:
+    fc_dir = archive_dir / fc
+    syn_hh = pd.read_csv(fc_dir / "synthetic_households.csv")
+    syn_per = pd.read_csv(fc_dir / "synthetic_persons.csv")
+
+    syn_hh["income_quartile"] = pd.cut(
+        syn_hh["HINCP"], bins=income_bin_edges, labels=income_bin_labels, include_lowest=True
+    )
+    syn_hh["hhsz"] = np.where(syn_hh["NP"] > 7, 7, syn_hh["NP"])
+    syn_hh["workers_capped"] = np.where(syn_hh["workers"] > 4, 4, syn_hh["workers"])
+
+    syn_income = syn_hh["income_quartile"].value_counts().reindex(income_bin_labels, fill_value=0)
+    syn_income_props = (syn_income / syn_income.sum()).values
+
+    syn_size = syn_hh.groupby("hhsz").size().reindex(size_categories, fill_value=0)
+    syn_size_props = (syn_size / syn_size.sum()).values
+
+    syn_workers = syn_hh.groupby("workers_capped").size().reindex(worker_categories, fill_value=0)
+    syn_workers_props = (syn_workers / syn_workers.sum()).values
+
+    syn_per["age_bin"] = pd.cut(
+        syn_per["AGEP"], bins=age_bins, labels=age_labels, right=False, include_lowest=True
+    )
+    syn_age = syn_per.groupby("age_bin", observed=False).size().reindex(age_labels, fill_value=0)
+    syn_age_props = (syn_age / syn_age.sum()).values
+
+    synthetic_data[fc] = {
+        "income": syn_income_props.tolist(),
+        "size": syn_size_props.tolist(),
+        "workers": syn_workers_props.tolist(),
+        "age": syn_age_props.tolist(),
+    }
+
+# ---------------------------------------------------------------------------
+# Convert to OJS-friendly structures
+# ---------------------------------------------------------------------------
+pums_data = {
+    "income": pums_income_props.tolist(),
+    "size": pums_size_props.tolist(),
+    "workers": pums_worker_props.tolist(),
+    "age": pums_age_props.tolist(),
+}
+
+ojs_define(
+    forecast_names=forecast_names,
+    income_labels=income_bin_labels,
+    size_labels=size_labels,
+    worker_labels=worker_labels,
+    age_labels=age_labels,
+    pums=pums_data,
+    synthetic=synthetic_data,
+)
+```
+
+
+
+# {.sidebar}
+
+```{ojs}
+viewof selected_forecast = Inputs.select(forecast_names, {
+  label: "Forecast Scenario"
+})
+```
+
+**PUMS** bars show the weighted base-year distribution (constant across scenarios).
+
+**Synthetic** bars show the distribution from the selected forecast's PopulationSim output.
+
+# Charts
+
+## Row {height="50%"}
+
+### {width="50%"}
+
+```{ojs}
+//| title: "Income Distribution"
+{
+  const syn = synthetic[selected_forecast];
+  const pums_vals = pums.income;
+  const labels = income_labels;
+  const trace_pums = {
+    x: labels,
+    y: pums_vals,
+    name: "PUMS",
+    type: "bar",
+    marker: { color: "steelblue" }
+  };
+  const trace_syn = {
+    x: labels,
+    y: syn.income,
+    name: "Synthetic",
+    type: "bar",
+    marker: { color: "darkorange" }
+  };
+  const layout = {
+    barmode: "group",
+    yaxis: { title: "Proportion of Households", tickformat: ".1%" },
+    legend: { orientation: "h", y: 1.12 },
+    margin: { t: 30, b: 80 }
+  };
+  const div = DOM.element("div");
+  Plotly.newPlot(div, [trace_pums, trace_syn], layout, { responsive: true });
+  return div;
+}
+```
+
+### {width="50%"}
+
+```{ojs}
+//| title: "Household Size"
+{
+  const syn = synthetic[selected_forecast];
+  const pums_vals = pums.size;
+  const labels = size_labels;
+  const trace_pums = {
+    x: labels,
+    y: pums_vals,
+    name: "PUMS",
+    type: "bar",
+    marker: { color: "steelblue" }
+  };
+  const trace_syn = {
+    x: labels,
+    y: syn.size,
+    name: "Synthetic",
+    type: "bar",
+    marker: { color: "darkorange" }
+  };
+  const layout = {
+    barmode: "group",
+    yaxis: { title: "Proportion of Households", tickformat: ".1%" },
+    legend: { orientation: "h", y: 1.12 },
+    margin: { t: 30, b: 50 }
+  };
+  const div = DOM.element("div");
+  Plotly.newPlot(div, [trace_pums, trace_syn], layout, { responsive: true });
+  return div;
+}
+```
+
+## Row {height="50%"}
+
+### {width="50%"}
+
+```{ojs}
+//| title: "Workers per Household"
+{
+  const syn = synthetic[selected_forecast];
+  const pums_vals = pums.workers;
+  const labels = worker_labels;
+  const trace_pums = {
+    x: labels,
+    y: pums_vals,
+    name: "PUMS",
+    type: "bar",
+    marker: { color: "steelblue" }
+  };
+  const trace_syn = {
+    x: labels,
+    y: syn.workers,
+    name: "Synthetic",
+    type: "bar",
+    marker: { color: "darkorange" }
+  };
+  const layout = {
+    barmode: "group",
+    yaxis: { title: "Proportion of Households", tickformat: ".1%" },
+    legend: { orientation: "h", y: 1.12 },
+    margin: { t: 30, b: 50 }
+  };
+  const div = DOM.element("div");
+  Plotly.newPlot(div, [trace_pums, trace_syn], layout, { responsive: true });
+  return div;
+}
+```
+
+### {width="50%"}
+
+```{ojs}
+//| title: "Age Distribution (5-Year Bins)"
+{
+  const syn = synthetic[selected_forecast];
+  const pums_vals = pums.age;
+  const labels = age_labels;
+  const trace_pums = {
+    x: labels,
+    y: pums_vals,
+    name: "PUMS",
+    type: "bar",
+    marker: { color: "steelblue" }
+  };
+  const trace_syn = {
+    x: labels,
+    y: syn.age,
+    name: "Synthetic",
+    type: "bar",
+    marker: { color: "darkorange" }
+  };
+  const layout = {
+    barmode: "group",
+    yaxis: { title: "Proportion of Persons", tickformat: ".1%" },
+    xaxis: { tickangle: -45 },
+    legend: { orientation: "h", y: 1.12 },
+    margin: { t: 30, b: 80 }
+  };
+  const div = DOM.element("div");
+  Plotly.newPlot(div, [trace_pums, trace_syn], layout, { responsive: true });
+  return div;
+}
+```
+
+```{ojs}
+//| output: false
+Plotly = require("https://cdn.plot.ly/plotly-2.35.2.min.js")
+```
