@@ -83,8 +83,14 @@ def build_results_summary(util: Util):
 		include_lowest=True,
 	)
 
-	pums_hh["hhsz"] = np.where(pums_hh["NP"] > 7, 7, pums_hh["NP"])
-	synthetic_hh["hhsz"] = np.where(synthetic_hh["NP"] > 7, 7, synthetic_hh["NP"])
+	if "hhsz" not in pums_hh.columns:
+		pums_hh["hhsz"] = np.where(pums_hh["NP"] > 7, 7, pums_hh["NP"])
+	else:
+		pums_hh["hhsz"] = np.where(pums_hh["hhsz"] > 7, 7, pums_hh["hhsz"])
+	if "hhsz" not in synthetic_hh.columns:
+		synthetic_hh["hhsz"] = np.where(synthetic_hh["NP"] > 7, 7, synthetic_hh["NP"])
+	else:
+		synthetic_hh["hhsz"] = np.where(synthetic_hh["hhsz"] > 7, 7, synthetic_hh["hhsz"])
 	size_categories = list(range(1, 8))
 	size_labels = [str(i) for i in range(1, 7)] + ["7+"]
 

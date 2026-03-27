@@ -25,8 +25,8 @@ regional_forecasts_dir: J:\Projects\Forecasts\_Regional\2026\REMI
 
 regional_forecast:
   - tablename: regional_controls
-    filename : REMI_OFM_v2022_Low.xlsx
-    # filename : REMI_OFM_v2022_Medium.xlsx
+    # filename : REMI_OFM_v2022_Low.xlsx
+    filename : REMI_OFM_v2022_Medium.xlsx
     # filename : REMI_OFM_v2022_High.xlsx
     # filename : REMI_Controls_Test_Low.xlsx
     # filename : PUMS_test.xlsx
@@ -69,5 +69,5 @@ steps:
 #  - steps.write_tables
 #  - steps.run_popsim
 #  - steps.archive_popsim_output
-#  - steps.results_summaries
+ - steps.results_summaries
  - steps.render_dashboard

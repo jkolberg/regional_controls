@@ -77,7 +77,10 @@ pums_hh_c = pums_hh.copy()
 pums_hh_c["income_quartile"] = pd.cut(
     pums_hh_c["HINCP"], bins=income_bin_edges, labels=income_bin_labels, include_lowest=True
 )
-pums_hh_c["hhsz"] = np.where(pums_hh_c["NP"] > 7, 7, pums_hh_c["NP"])
+if "hhsz" not in pums_hh_c.columns:
+  pums_hh_c["hhsz"] = np.where(pums_hh_c["NP"] > 7, 7, pums_hh_c["NP"])
+else:
+  pums_hh_c["hhsz"] = np.where(pums_hh_c["hhsz"] > 7, 7, pums_hh_c["hhsz"])
 pums_hh_c["workers_capped"] = np.where(pums_hh_c["workers"] > 4, 4, pums_hh_c["workers"])
 
 pums_income_counts = (
@@ -112,6 +115,7 @@ pums_age_props = (pums_age_counts / pums_age_counts.sum()).values
 # Compute synthetic distributions for every forecast
 # ---------------------------------------------------------------------------
 synthetic_data = {}
+synthetic_counts = {}
 for fc in forecast_names:
     fc_dir = archive_dir / fc
     syn_hh = pd.read_csv(fc_dir / "synthetic_households.csv")
@@ -120,7 +124,10 @@ for fc in forecast_names:
     syn_hh["income_quartile"] = pd.cut(
         syn_hh["HINCP"], bins=income_bin_edges, labels=income_bin_labels, include_lowest=True
     )
-    syn_hh["hhsz"] = np.where(syn_hh["NP"] > 7, 7, syn_hh["NP"])
+    if "hhsz" not in syn_hh.columns:
+      syn_hh["hhsz"] = np.where(syn_hh["NP"] > 7, 7, syn_hh["NP"])
+    else:
+      syn_hh["hhsz"] = np.where(syn_hh["hhsz"] > 7, 7, syn_hh["hhsz"])
     syn_hh["workers_capped"] = np.where(syn_hh["workers"] > 4, 4, syn_hh["workers"])
 
     syn_income = syn_hh["income_quartile"].value_counts().reindex(income_bin_labels, fill_value=0)
@@ -145,6 +152,13 @@ for fc in forecast_names:
         "age": syn_age_props.tolist(),
     }
 
+    synthetic_counts[fc] = {
+        "income": syn_income.values.tolist(),
+        "size": syn_size.values.tolist(),
+        "workers": syn_workers.values.tolist(),
+        "age": syn_age.values.tolist(),
+    }
+
 # ---------------------------------------------------------------------------
 # Convert to OJS-friendly structures
 # ---------------------------------------------------------------------------
@@ -155,14 +169,26 @@ pums_data = {
     "age": pums_age_props.tolist(),
 }
 
+pums_counts_data = {
+    "income": pums_income_counts.values.tolist(),
+    "size": pums_size_counts.values.tolist(),
+    "workers": pums_worker_counts.values.tolist(),
+    "age": pums_age_counts.values.tolist(),
+}
+
+default_multi = "REMI_OFM_v2022_Medium" if "REMI_OFM_v2022_Medium" in forecast_names else forecast_names[0]
+
 ojs_define(
     forecast_names=forecast_names,
+    default_multi_forecast=default_multi,
     income_labels=income_bin_labels,
     size_labels=size_labels,
     worker_labels=worker_labels,
     age_labels=age_labels,
     pums=pums_data,
+    pums_counts=pums_counts_data,
     synthetic=synthetic_data,
+    synthetic_counts=synthetic_counts,
     base_year=str(base_year),
     forecast_year=str(forecast_year),
 )
@@ -170,7 +196,16 @@ ojs_define(
 
 
 
-# {.sidebar}
+```{ojs}
+//| output: false
+Plotly = require("https://cdn.plot.ly/plotly-2.35.2.min.js")
+
+psrc_colors = ["#054B6E", "#F05A28", "#8CC63E", "#91268F", "#00A7A0", "#DF4486", "#EFB257", "#4C4C4C"]
+```
+
+# Single Forecast
+
+## {.sidebar}
 
 ```{ojs}
 viewof selected_forecast = Inputs.select(forecast_names, {
@@ -181,8 +216,6 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 **PUMS** bars show the weighted base-year distribution (constant across scenarios).
 
 **Synthetic** bars show the distribution from the selected forecast's PopulationSim output for the forecast year.
-
-# Charts
 
 ## Row
 
@@ -333,7 +366,153 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
+
+# Multi-Forecast
+
+## {.sidebar}
+
 ```{ojs}
-//| output: false
-Plotly = require("https://cdn.plot.ly/plotly-2.35.2.min.js")
+viewof selected_forecasts = Inputs.checkbox(forecast_names, {
+  label: "Forecast Scenarios",
+  value: [default_multi_forecast]
+})
+```
+
+Each bar shows the **change in count** (synthetic − PUMS base year) for the selected forecast scenarios.
+
+## Row
+
+### Column
+
+```{ojs}
+//| title: "Income Distribution — Change from Base Year"
+{
+  const labels = income_labels;
+  const base = pums_counts.income;
+  const traces = selected_forecasts.map((fc, i) => {
+    const syn = synthetic_counts[fc].income;
+    const deltas = syn.map((v, j) => v - base[j]);
+    return {
+      x: labels,
+      y: deltas,
+      name: fc,
+      type: "bar",
+      marker: { color: psrc_colors[i % psrc_colors.length] }
+    };
+  });
+  const layout = {
+    barmode: "group",
+    height: 400,
+    width: 650,
+    yaxis: { title: "Change from Base Year" },
+    legend: { orientation: "h", y: 1.15 },
+    margin: { t: 30, b: 80 },
+    shapes: [{ type: "line", x0: 0, x1: 1, xref: "paper", y0: 0, y1: 0, line: { color: "#999", width: 1, dash: "dot" } }]
+  };
+  const div = DOM.element("div");
+  Plotly.newPlot(div, traces, layout, {responsive: true});
+  return div;
+}
+```
+
+### Column
+
+```{ojs}
+//| title: "Household Size — Change from Base Year"
+{
+  const labels = size_labels;
+  const base = pums_counts.size;
+  const traces = selected_forecasts.map((fc, i) => {
+    const syn = synthetic_counts[fc].size;
+    const deltas = syn.map((v, j) => v - base[j]);
+    return {
+      x: labels,
+      y: deltas,
+      name: fc,
+      type: "bar",
+      marker: { color: psrc_colors[i % psrc_colors.length] }
+    };
+  });
+  const layout = {
+    barmode: "group",
+    height: 400,
+    width: 650,
+    yaxis: { title: "Change from Base Year" },
+    legend: { orientation: "h", y: 1.15 },
+    margin: { t: 30, b: 50 },
+    shapes: [{ type: "line", x0: 0, x1: 1, xref: "paper", y0: 0, y1: 0, line: { color: "#999", width: 1, dash: "dot" } }]
+  };
+  const div = DOM.element("div");
+  Plotly.newPlot(div, traces, layout, {responsive: true});
+  return div;
+}
+```
+
+## Row
+
+### Column
+
+```{ojs}
+//| title: "Workers per Household — Change from Base Year"
+{
+  const labels = worker_labels;
+  const base = pums_counts.workers;
+  const traces = selected_forecasts.map((fc, i) => {
+    const syn = synthetic_counts[fc].workers;
+    const deltas = syn.map((v, j) => v - base[j]);
+    return {
+      x: labels,
+      y: deltas,
+      name: fc,
+      type: "bar",
+      marker: { color: psrc_colors[i % psrc_colors.length] }
+    };
+  });
+  const layout = {
+    barmode: "group",
+    height: 400,
+    width: 650,
+    yaxis: { title: "Change from Base Year" },
+    legend: { orientation: "h", y: 1.15 },
+    margin: { t: 30, b: 50 },
+    shapes: [{ type: "line", x0: 0, x1: 1, xref: "paper", y0: 0, y1: 0, line: { color: "#999", width: 1, dash: "dot" } }]
+  };
+  const div = DOM.element("div");
+  Plotly.newPlot(div, traces, layout, {responsive: true});
+  return div;
+}
+```
+
+### Column
+
+```{ojs}
+//| title: "Age Distribution — Change from Base Year"
+{
+  const labels = age_labels;
+  const base = pums_counts.age;
+  const traces = selected_forecasts.map((fc, i) => {
+    const syn = synthetic_counts[fc].age;
+    const deltas = syn.map((v, j) => v - base[j]);
+    return {
+      x: labels,
+      y: deltas,
+      name: fc,
+      type: "bar",
+      marker: { color: psrc_colors[i % psrc_colors.length] }
+    };
+  });
+  const layout = {
+    barmode: "group",
+    height: 400,
+    width: 650,
+    yaxis: { title: "Change from Base Year" },
+    xaxis: { tickangle: -45 },
+    legend: { orientation: "h", y: 1.15 },
+    margin: { t: 30, b: 80 },
+    shapes: [{ type: "line", x0: 0, x1: 1, xref: "paper", y0: 0, y1: 0, line: { color: "#999", width: 1, dash: "dot" } }]
+  };
+  const div = DOM.element("div");
+  Plotly.newPlot(div, traces, layout, {responsive: true});
+  return div;
+}
 ```
