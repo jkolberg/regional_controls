@@ -210,12 +210,12 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   };
   const layout = {
     barmode: "group",
-    height: 250,
     yaxis: { title: "Proportion of Households", tickformat: ".1%" },
     legend: { orientation: "h", y: 1.12 },
     margin: { t: 30, b: 80 }
   };
   const div = DOM.element("div");
+  div.style.height = "250px";
   Plotly.newPlot(div, [trace_pums, trace_syn], layout, { responsive: true });
   return div;
 }
@@ -245,12 +245,12 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   };
   const layout = {
     barmode: "group",
-    height: 250,
     yaxis: { title: "Proportion of Households", tickformat: ".1%" },
     legend: { orientation: "h", y: 1.12 },
     margin: { t: 30, b: 50 }
   };
   const div = DOM.element("div");
+  div.style.height = "250px";
   Plotly.newPlot(div, [trace_pums, trace_syn], layout, { responsive: true });
   return div;
 }
@@ -282,12 +282,12 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   };
   const layout = {
     barmode: "group",
-    height: 250,
     yaxis: { title: "Proportion of Households", tickformat: ".1%" },
     legend: { orientation: "h", y: 1.12 },
     margin: { t: 30, b: 50 }
   };
   const div = DOM.element("div");
+  div.style.height = "250px";
   Plotly.newPlot(div, [trace_pums, trace_syn], layout, { responsive: true });
   return div;
 }
@@ -317,13 +317,13 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   };
   const layout = {
     barmode: "group",
-    height: 250,
     yaxis: { title: "Proportion of Persons", tickformat: ".1%" },
     xaxis: { tickangle: -45 },
     legend: { orientation: "h", y: 1.12 },
     margin: { t: 30, b: 80 }
   };
   const div = DOM.element("div");
+  div.style.height = "250px";
   Plotly.newPlot(div, [trace_pums, trace_syn], layout, { responsive: true });
   return div;
 }
