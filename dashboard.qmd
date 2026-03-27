@@ -184,7 +184,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 
 # Charts
 
-## Row {height="450px"}
+## Row {height="650px"}
 
 ```{ojs}
 //| title: "Income Distribution"
@@ -218,7 +218,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-## Row {height="450px"}
+## Row {height="650px"}
 
 ```{ojs}
 //| title: "Household Size"
@@ -252,7 +252,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-## Row {height="450px"}
+## Row {height="650px"}
 
 ```{ojs}
 //| title: "Workers per Household"
@@ -286,7 +286,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-## Row {height="450px"}
+## Row {height="650px"}
 
 ```{ojs}
 //| title: "Age Distribution (5-Year Bins)"
