@@ -184,7 +184,9 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 
 # Charts
 
-## Row {height="650px"}
+## Row {height="500px"}
+
+### Column
 
 ```{ojs}
 //| title: "Income Distribution"
@@ -197,14 +199,14 @@ viewof selected_forecast = Inputs.select(forecast_names, {
     y: pums_vals,
     name: "PUMS " + base_year,
     type: "bar",
-    marker: { color: "steelblue" }
+    marker: { color: "#054B6E" }
   };
   const trace_syn = {
     x: labels,
     y: syn.income,
     name: "Synthetic " + forecast_year,
     type: "bar",
-    marker: { color: "darkorange" }
+    marker: { color: "#F05A28" }
   };
   const layout = {
     barmode: "group",
@@ -218,7 +220,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-## Row {height="650px"}
+### Column
 
 ```{ojs}
 //| title: "Household Size"
@@ -231,14 +233,14 @@ viewof selected_forecast = Inputs.select(forecast_names, {
     y: pums_vals,
     name: "PUMS " + base_year,
     type: "bar",
-    marker: { color: "steelblue" }
+    marker: { color: "#054B6E" }
   };
   const trace_syn = {
     x: labels,
     y: syn.size,
     name: "Synthetic " + forecast_year,
     type: "bar",
-    marker: { color: "darkorange" }
+    marker: { color: "#F05A28" }
   };
   const layout = {
     barmode: "group",
@@ -252,7 +254,9 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-## Row {height="650px"}
+## Row {height="500px"}
+
+### Column
 
 ```{ojs}
 //| title: "Workers per Household"
@@ -265,14 +269,14 @@ viewof selected_forecast = Inputs.select(forecast_names, {
     y: pums_vals,
     name: "PUMS " + base_year,
     type: "bar",
-    marker: { color: "steelblue" }
+    marker: { color: "#054B6E" }
   };
   const trace_syn = {
     x: labels,
     y: syn.workers,
     name: "Synthetic " + forecast_year,
     type: "bar",
-    marker: { color: "darkorange" }
+    marker: { color: "#F05A28" }
   };
   const layout = {
     barmode: "group",
@@ -286,7 +290,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-## Row {height="650px"}
+### Column
 
 ```{ojs}
 //| title: "Age Distribution (5-Year Bins)"
@@ -299,14 +303,14 @@ viewof selected_forecast = Inputs.select(forecast_names, {
     y: pums_vals,
     name: "PUMS " + base_year,
     type: "bar",
-    marker: { color: "steelblue" }
+    marker: { color: "#054B6E" }
   };
   const trace_syn = {
     x: labels,
     y: syn.age,
     name: "Synthetic " + forecast_year,
     type: "bar",
-    marker: { color: "darkorange" }
+    marker: { color: "#F05A28" }
   };
   const layout = {
     barmode: "group",
