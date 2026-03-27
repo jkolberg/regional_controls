@@ -2,8 +2,9 @@
 title: "Regional Controls — Forecast Comparison Dashboard"
 format:
   dashboard:
-    orientation: columns
+    orientation: rows
     theme: cosmo
+    scrolling: true
     output-file: index.html
     nav-buttons:
       - icon: github
@@ -14,9 +15,18 @@ format:
 #| output: false
 
 from pathlib import Path
+import yaml
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+
+# ---------------------------------------------------------------------------
+# Load settings
+# ---------------------------------------------------------------------------
+with open("configs_pypyr/settings.yaml") as f:
+    settings = yaml.safe_load(f)
+base_year = settings["base_year"]
+forecast_year = settings["forecast_year"]
 
 # ---------------------------------------------------------------------------
 # Discover available forecasts
@@ -153,6 +163,8 @@ ojs_define(
     age_labels=age_labels,
     pums=pums_data,
     synthetic=synthetic_data,
+    base_year=str(base_year),
+    forecast_year=str(forecast_year),
 )
 ```
 
@@ -168,13 +180,11 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 
 **PUMS** bars show the weighted base-year distribution (constant across scenarios).
 
-**Synthetic** bars show the distribution from the selected forecast's PopulationSim output.
+**Synthetic** bars show the distribution from the selected forecast's PopulationSim output for the forecast year.
 
 # Charts
 
-## Row {height="50%"}
-
-### {width="50%"}
+## Row {height="450px"}
 
 ```{ojs}
 //| title: "Income Distribution"
@@ -185,14 +195,14 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const trace_pums = {
     x: labels,
     y: pums_vals,
-    name: "PUMS",
+    name: "PUMS " + base_year,
     type: "bar",
     marker: { color: "steelblue" }
   };
   const trace_syn = {
     x: labels,
     y: syn.income,
-    name: "Synthetic",
+    name: "Synthetic " + forecast_year,
     type: "bar",
     marker: { color: "darkorange" }
   };
@@ -208,7 +218,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-### {width="50%"}
+## Row {height="450px"}
 
 ```{ojs}
 //| title: "Household Size"
@@ -219,14 +229,14 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const trace_pums = {
     x: labels,
     y: pums_vals,
-    name: "PUMS",
+    name: "PUMS " + base_year,
     type: "bar",
     marker: { color: "steelblue" }
   };
   const trace_syn = {
     x: labels,
     y: syn.size,
-    name: "Synthetic",
+    name: "Synthetic " + forecast_year,
     type: "bar",
     marker: { color: "darkorange" }
   };
@@ -242,9 +252,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-## Row {height="50%"}
-
-### {width="50%"}
+## Row {height="450px"}
 
 ```{ojs}
 //| title: "Workers per Household"
@@ -255,14 +263,14 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const trace_pums = {
     x: labels,
     y: pums_vals,
-    name: "PUMS",
+    name: "PUMS " + base_year,
     type: "bar",
     marker: { color: "steelblue" }
   };
   const trace_syn = {
     x: labels,
     y: syn.workers,
-    name: "Synthetic",
+    name: "Synthetic " + forecast_year,
     type: "bar",
     marker: { color: "darkorange" }
   };
@@ -278,7 +286,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
 }
 ```
 
-### {width="50%"}
+## Row {height="450px"}
 
 ```{ojs}
 //| title: "Age Distribution (5-Year Bins)"
@@ -289,14 +297,14 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const trace_pums = {
     x: labels,
     y: pums_vals,
-    name: "PUMS",
+    name: "PUMS " + base_year,
     type: "bar",
     marker: { color: "steelblue" }
   };
   const trace_syn = {
     x: labels,
     y: syn.age,
-    name: "Synthetic",
+    name: "Synthetic " + forecast_year,
     type: "bar",
     marker: { color: "darkorange" }
   };

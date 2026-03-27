@@ -64,10 +64,10 @@ steps:
 #  - steps.pums_download
 #  - steps.prepare_pums
 #  - steps.comparison_cache_to_hdf5
- - steps.load_data
- - steps.remi_controls
- - steps.write_tables
- - steps.run_popsim
- - steps.archive_popsim_output
- - steps.results_summaries
+#  - steps.load_data
+#  - steps.remi_controls
+#  - steps.write_tables
+#  - steps.run_popsim
+#  - steps.archive_popsim_output
+#  - steps.results_summaries
  - steps.render_dashboard
