@@ -27,9 +27,9 @@ regional_forecast:
   - tablename: regional_controls
     # filename : REMI_OFM_v2022_Low.xlsx
     # filename : REMI_OFM_v2022_Medium.xlsx
-    filename : REMI_OFM_v2022_High.xlsx
+    # filename : REMI_OFM_v2022_High.xlsx
     # filename : REMI_controls_test_high.xlsx
-    # filename : REMI_controls_test_low.xlsx
+    filename : REMI_controls_test_low.xlsx
     # filename : PUMS_test.xlsx
 
 input_table_list:
