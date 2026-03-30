@@ -273,6 +273,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const layout = {
     barmode: "group",
     height: 400,
+    xaxis: { type: "category" },
     yaxis: { title: "Proportion of Households", tickformat: ".1%" },
     legend: { orientation: "h", y: 1.12 },
     margin: { t: 30, b: 50 }
@@ -310,6 +311,7 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const layout = {
     barmode: "group",
     height: 400,
+    xaxis: { type: "category" },
     yaxis: { title: "Proportion of Households", tickformat: ".1%" },
     legend: { orientation: "h", y: 1.12 },
     margin: { t: 30, b: 50 }
@@ -427,6 +429,7 @@ Each bar shows the **change in count** (synthetic − PUMS base year) for the se
     height: 400,
     yaxis: { title: "Change from Base Year" },
     legend: { orientation: "h", y: 1.15 },
+    xaxis: { type: "category" },
     margin: { t: 30, b: 50 },
     shapes: [{ type: "line", x0: 0, x1: 1, xref: "paper", y0: 0, y1: 0, line: { color: "#999", width: 1, dash: "dot" } }]
   };
@@ -459,7 +462,7 @@ Each bar shows the **change in count** (synthetic − PUMS base year) for the se
   const layout = {
     barmode: "group",
     height: 400,
-
+    xaxis: { type: "category" },
     yaxis: { title: "Change from Base Year" },
     legend: { orientation: "h", y: 1.15 },
     margin: { t: 30, b: 50 },
