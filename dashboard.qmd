@@ -238,7 +238,6 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const layout = {
     barmode: "group",
     height: 400,
-    width: 650,
     yaxis: { title: "Proportion of Households", tickformat: ".1%" },
     legend: { orientation: "h", y: 1.12 },
     margin: { t: 30, b: 80 }
@@ -274,7 +273,6 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const layout = {
     barmode: "group",
     height: 400,
-    width: 650,
     yaxis: { title: "Proportion of Households", tickformat: ".1%" },
     legend: { orientation: "h", y: 1.12 },
     margin: { t: 30, b: 50 }
@@ -312,7 +310,6 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const layout = {
     barmode: "group",
     height: 400,
-    width: 650,
     yaxis: { title: "Proportion of Households", tickformat: ".1%" },
     legend: { orientation: "h", y: 1.12 },
     margin: { t: 30, b: 50 }
@@ -348,7 +345,6 @@ viewof selected_forecast = Inputs.select(forecast_names, {
   const layout = {
     barmode: "group",
     height: 400,
-    width: 650,
     yaxis: { title: "Proportion of Persons", tickformat: ".1%" },
     xaxis: { tickangle: -45 },
     legend: { orientation: "h", y: 1.12 },
@@ -397,7 +393,6 @@ Each bar shows the **change in count** (synthetic − PUMS base year) for the se
   const layout = {
     barmode: "group",
     height: 400,
-    width: 650,
     yaxis: { title: "Change from Base Year" },
     legend: { orientation: "h", y: 1.15 },
     margin: { t: 30, b: 80 },
@@ -430,7 +425,6 @@ Each bar shows the **change in count** (synthetic − PUMS base year) for the se
   const layout = {
     barmode: "group",
     height: 400,
-    width: 650,
     yaxis: { title: "Change from Base Year" },
     legend: { orientation: "h", y: 1.15 },
     margin: { t: 30, b: 50 },
@@ -465,7 +459,7 @@ Each bar shows the **change in count** (synthetic − PUMS base year) for the se
   const layout = {
     barmode: "group",
     height: 400,
-    width: 650,
+
     yaxis: { title: "Change from Base Year" },
     legend: { orientation: "h", y: 1.15 },
     margin: { t: 30, b: 50 },
@@ -498,7 +492,6 @@ Each bar shows the **change in count** (synthetic − PUMS base year) for the se
   const layout = {
     barmode: "group",
     height: 400,
-    width: 650,
     yaxis: { title: "Change from Base Year" },
     xaxis: { tickangle: -45 },
     legend: { orientation: "h", y: 1.15 },
