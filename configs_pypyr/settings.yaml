@@ -9,7 +9,7 @@ county_map:
   Pierce County: 53053
   Snohomish County: 53061
 base_year: 2023
-forecast_year: 2050
+forecast_year: 2060
 
 # Must create Env Variable holding census key. Put name of Var here:
 census_key: CENSUS_KEY
@@ -25,11 +25,12 @@ regional_forecasts_dir: J:\Projects\Forecasts\_Regional\2026\REMI
 
 regional_forecast:
   - tablename: regional_controls
+    filename: REMI_v3.3.xlsx
     # filename : REMI_OFM_v2022_Low.xlsx
     # filename : REMI_OFM_v2022_Medium.xlsx
     # filename : REMI_OFM_v2022_High.xlsx
     # filename : REMI_controls_test_high.xlsx
-    filename : REMI_controls_test_low.xlsx
+    # filename : REMI_controls_test_low.xlsx
     # filename : PUMS_test.xlsx
 
 input_table_list:
@@ -53,6 +54,8 @@ output_table_list:
     filename: seed_persons.csv
   - tablename: county_controls
     filename: remi_controls.csv
+  - tablename: region_summed
+    filename: region_summed.csv
 
 nan_fill: 0
 urbansim_baseyear_cache: L:/base_year_2023_inputs/urbansim2_cache/2023
@@ -61,14 +64,14 @@ comparison_controls_table: /annual_household_control_totals
 
 # pypyr steps to run
 steps:
-#  - steps.puma_county_lookup
-#  - steps.pums_download
-#  - steps.prepare_pums
-#  - steps.comparison_cache_to_hdf5
-#  - steps.load_data
-#  - steps.remi_controls
-#  - steps.write_tables
-#  - steps.run_popsim
-#  - steps.archive_popsim_output
-#  - steps.results_summaries
+ - steps.puma_county_lookup
+ - steps.pums_download
+ - steps.prepare_pums
+ - steps.comparison_cache_to_hdf5
+ - steps.load_data
+ - steps.remi_controls
+ - steps.write_tables
+ - steps.run_popsim
+ - steps.archive_popsim_output
+ - steps.results_summaries
  - steps.render_dashboard

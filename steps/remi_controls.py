@@ -1,5 +1,5 @@
 import re
-
+import numpy as np
 import pandas as pd
 
 from utils import Util
@@ -197,10 +197,27 @@ def build_remi_controls(util):
 	remi_age["gq"] = remi_age.index.map(gq_rates).fillna(0) * remi_age["total_pop"]
 	remi_age["hhpop"] = remi_age["total_pop"] - remi_age["gq"]
 	remi_age["hh"] = remi_age["hhpop"] * remi_age.index.map(headship_rates).fillna(0)
+	
+	# sum totals for use in control totals process
+	region_summed = (
+		remi_age[['total_pop','hhpop','gq','hh']].sum().round(0).astype(int)
+		.to_frame(name=f'{forecast_year}').reset_index(names='variable')
+	)
 
 	# Calculate labor force by industry and occupation using Pums-workers to REMI-employment ratios
 	remi_emp = _process_occupation_codes(remi, util, category_col, year_col)
 	remi_ind = _process_industry_codes(remi, util, category_col, year_col)
+	
+	# sum employment for military and non-military for use in control totals process
+	military_out = remi_ind.copy()
+	military_out['military_employment'] = np.where(military_out['industry'] == '99', military_out['employment'], 0)
+	military_out['non_military_employment'] = np.where(military_out['industry'] != '99', military_out['employment'], 0)
+	military_out = (
+		military_out[[ 'non_military_employment','military_employment','employment']]
+		.sum().round(0).astype(int).to_frame(name=f'{forecast_year}').reset_index(names='variable')
+	)
+	region_summed = pd.concat([region_summed,military_out])
+	util.save_table("region_summed", region_summed)
 
 	non_gq_workers_ind = get_non_gq_workers(pums_person, 'industry')
 	worker_to_emp_ratio_ind = get_workers_to_remi_emp_ratio(util, non_gq_workers_ind, util.get_setting('base_year'), category_col)

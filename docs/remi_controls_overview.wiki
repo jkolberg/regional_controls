@@ -1,0 +1,200 @@
+__TOC__
+
+<blockquote>A high-level walkthrough of how PUMS-derived rates are applied to the REMI population forecast to produce the county-level marginal controls that drive PopulationSim. Includes a fully worked trace for '''King County, ages 35–39, forecast year 2050'''.</blockquote>
+
+= The Big Idea =
+
+The REMI forecast tells us ''how many people'' there will be in each county and age group in 2050, plus totals for employment by industry and occupation. REMI does '''not''' tell us things like:
+
+* How many of those people live in group quarters vs. households?
+* How many households does that imply?
+* What is the household size distribution?
+* How many of those households have 0, 1, 2+ workers?
+
+PUMS (American Community Survey microdata) can answer all of those questions — but only for the base year. We assume the '''behavioral rates''' observed in PUMS (GQ share, headship, hhsz distribution, workers per household) are stable over time, and apply them to the REMI forecast numbers to produce marginal controls for 2050.
+
+= Rates Calculated from PUMS =
+
+All rates are weighted (persons by <code>PWGTP</code>, households by <code>WGTP</code>) and calculated by '''county × age group'''.
+
+{| class="wikitable"
+! Rate !! What it answers !! Formula
+|-
+| '''GQ rate''' || What fraction of people in this age group live in group quarters? || <code>Σ PWGTP (gq=1) / Σ PWGTP (all)</code>
+|-
+| '''Headship rate''' || How many households does each non-GQ person in this age group translate to? || <code>Σ WGTP (non-GQ hh, by age of head) / Σ PWGTP (non-GQ persons)</code>
+|-
+| '''Household size distribution''' || Given a head of household in this age group, how likely is each hhsz (1–5)? || <code>Σ WGTP by hhsz / Σ WGTP (all non-GQ hh in age group)</code>
+|-
+| '''Workers-per-household distribution''' || Given a household of this size with a head in this age group, how likely is each worker count (0–4)? || <code>Σ WGTP by (hhsz, workers) / Σ WGTP by hhsz</code>
+|}
+
+= How the Rates Get Applied to REMI =
+
+For each county and 5-year age group, start with the REMI total population forecast for 2050 and walk it through the rates:
+
+<pre>
+REMI total pop (age group, 2050)
+     │
+     ├── × GQ rate ──────────────► GQ population
+     │
+     └── × (1 − GQ rate) ────────► Household population
+                │
+                └── × headship rate ──► Households (by age of head)
+                            │
+                            └── × hhsz distribution ──► Households by size
+                                         │
+                                         └── × workers-per-hhsz ──► Households by size × workers
+</pre>
+
+Finally, the step sums out the age-of-head dimension and rolls the 5-year age bins up into four broader bins (<code>ages_0_24</code>, <code>ages_25_44</code>, <code>ages_45_64</code>, <code>ages_65_plus</code>) because those are the marginal totals PopulationSim is configured to hit.
+
+= Trace Example: King County, ages 35–39, forecast year 2050 =
+
+All numbers below come straight from the current pipeline run (<code>data/pipeline.h5</code>) using the '''REMI_controls_test_low''' forecast.
+
+== Step 1 — PUMS counts for King County, age group 35–39 ==
+
+{| class="wikitable"
+! Quantity !! Weighted value
+|-
+| Total persons || 193,102
+|-
+| GQ persons || 1,736
+|-
+| Non-GQ persons || 191,366
+|-
+| Non-GQ workers (<code>ESR ∈ 1..5</code>) || 166,785
+|-
+| Non-GQ households with head age 35–39 || 103,108
+|}
+
+== Step 2 — Rates derived from those counts ==
+
+{| class="wikitable"
+! Rate !! Calculation !! Value
+|-
+| GQ rate || 1,736 / 193,102 || '''0.0090''' (0.9%)
+|-
+| Headship rate || 103,108 / 191,366 || '''0.5388'''
+|-
+| LFPR || 166,785 / 191,366 || '''0.8715'''
+|}
+
+'''Household size distribution''' (conditional on head age 35–39):
+
+{| class="wikitable"
+! hhsz !! Σ WGTP !! Share
+|-
+| 1 || 24,440 || 0.2371
+|-
+| 2 || 25,304 || 0.2454
+|-
+| 3 || 19,156 || 0.1858
+|-
+| 4 || 21,937 || 0.2128
+|-
+| 5+ || 12,271 || 0.1190
+|-
+| '''Total''' || '''103,108''' || '''1.0000'''
+|}
+
+'''Workers-per-household distribution''' (conditional on head age 35–39, hhsz = 2):
+
+{| class="wikitable"
+! workers !! Σ WGTP !! Share
+|-
+| 0 || 836 || 0.0330
+|-
+| 1 || 5,736 || 0.2267
+|-
+| 2 || 18,732 || '''0.7403'''
+|-
+| '''Total''' || '''25,304''' || '''1.0000'''
+|}
+
+== Step 3 — Apply to REMI 2050 ==
+
+REMI forecasts '''200.183 thousand''' persons aged 35–39 in King County in 2050, i.e. '''200,183'''.
+
+{| class="wikitable"
+! Calculation !! Result
+|-
+| GQ population = 200,183 × 0.0090 || ≈ '''1,800'''
+|-
+| Household population = 200,183 − 1,800 || ≈ '''198,383'''
+|-
+| Households (head age 35–39) = 198,383 × 0.5388 || ≈ '''106,889'''
+|-
+| hhsz = 2 households (head age 35–39) = 106,889 × 0.2454 || ≈ '''26,231'''
+|-
+| hhsz = 2, 2-worker households (head age 35–39) = 26,231 × 0.7403 || ≈ '''19,418'''
+|}
+
+The same chain runs for every county × age group × hhsz × worker-count cell, then gets summed across age-of-head to produce the <code>hhsz1..hhsz5</code> and <code>workers0..workers4</code> columns in the final control table.
+
+== Step 4 — Aggregate to the PopulationSim marginal table ==
+
+After running the full chain and collapsing the 5-year age bins, the King County row of <code>county_controls</code> looks like this (excerpt):
+
+{| class="wikitable"
+! Column !! Value
+|-
+| <code>ages_25_44</code> || 763,098
+|-
+| <code>ages_45_64</code> || 828,237
+|-
+| <code>num_hh</code> || 1,208,513
+|-
+| <code>hhsz1</code> || 380,049
+|-
+| <code>hhsz2</code> || 420,902
+|-
+| <code>workers0</code> || 275,609
+|-
+| <code>workers2</code> || 379,768
+|-
+| <code>naics_62</code> (health care) || 215,851
+|-
+| <code>soc_25</code> (education) || 92,984
+|}
+
+These are the '''marginal control totals''' PopulationSim tries to hit simultaneously.
+
+= Labor Force (Industry and Occupation) =
+
+Industry and occupation controls work slightly differently. REMI gives forecast '''employment''' by industry / occupation, but PUMS worker counts (residence-based) don't exactly match REMI employment (jobs-based). To reconcile them, we compute a '''base-year calibration ratio''':
+
+<math>r_i = \frac{\text{PUMS non-GQ workers in industry } i \text{ (base year)}}{\text{REMI employment in industry } i \text{ (base year)}}</math>
+
+Then forecast labor force is
+
+<math>L_{c,i}^{\text{2050}} = E_{c,i}^{\text{REMI 2050}} \cdot r_i</math>
+
+The same pattern applies for occupation. These populate the <code>naics_*</code> and <code>soc_*</code> columns in the control table.
+
+= How PopulationSim Uses These Controls =
+
+PopulationSim doesn't synthesize people from scratch — it '''re-samples the PUMS seed households''', assigning each one an integer expansion weight, so that when you sum the weights you hit the marginal controls we just built.
+
+The procedure, at a high level:
+
+# '''Seed data''': each non-GQ PUMS household (and its persons) is a candidate "template" household, tagged with all of its attributes from the ACS (hhsz, workers, age of head, industry, occupation, ''plus every other column that rode along'' — income, tenure, number of vehicles, race, educational attainment, etc.).
+# '''Controls''': the <code>county_controls</code> table from this step tells PopulationSim how many households/persons must exist in each county by <code>hhsz</code>, by <code>workers</code>, by age group, and how many workers by industry and occupation.
+# '''Fitting''': PopulationSim runs a list-balancing / integerization algorithm (list balancing at the PUMA/TAZ level + integer programming) that finds household expansion weights minimizing deviation from all controls simultaneously.
+# '''Expansion''': each PUMS household ends up replicated some integer number of times in the synthetic population.
+
+== Why this gives us "free" attributes ==
+
+Because we are '''cloning real PUMS households''', the synthetic households come with every attribute that PUMS has, not just the ones we controlled on. Household income is the classic example:
+
+* We '''never''' put income in the marginal controls.
+* But a synthetic household that was cloned from a PUMS record with <code>HINCP = $92,000</code> still has <code>HINCP = $92,000</code>.
+* Summed across the synthetic population, the income distribution is whatever PUMS says it is ''for households that look like ours on the controlled dimensions'' (size, workers, age of head, industry, occupation).
+
+The same is true for tenure, vehicle ownership, housing unit type, educational attainment, race, language spoken — any column on the PUMS seed table is preserved in the final synthetic population. The marginal controls ensure the '''counts''' match the REMI forecast on the dimensions we care about most; PUMS supplies the joint distribution of everything else.
+
+== Caveats ==
+
+* Attributes we don't control are only as representative as PUMS is for the groups we ''do'' control. If PUMS systematically understates high-income households with 2 workers and a head aged 35–39, the synthetic population will reproduce that bias.
+* PUMS rates are held constant between the base year and 2050. Structural trends (shrinking household size, rising labor force participation at older ages, changing industry mix within occupations) are '''not''' modeled unless they are baked into the REMI totals themselves.
